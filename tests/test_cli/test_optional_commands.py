@@ -58,12 +58,18 @@ def test_present_but_broken_module_raises_instead_of_vanishing():
     assert "simulated missing dependency" in out.stderr
 
 
-def test_run_works_without_the_dashboard_module(monkeypatch):
+def test_core_run_writes_no_legacy_dashboard():
+    """`tps2 run` reports progress in its log (which `tps2 ui` streams), not dashboard.html.
+
+    The old auto-refreshing status page was a SnowMapper-era leftover that turned up in
+    every simulation directory (removed 2026-10-01).
+    """
+    from pathlib import Path
+
     from topopyscale2.cli import main
 
-    monkeypatch.setitem(sys.modules, "topopyscale2.outputs.dashboard", None)
-    update = main._live_dashboard_updater()
-    assert update("any_dir", status="Running", step="x") is None
+    src = Path(main.__file__).read_text(encoding="utf-8")
+    assert "update_live_dashboard" not in src and "dashboard.html" not in src
 
 
 @pytest.mark.parametrize("name", sorted(V1_COMMANDS))

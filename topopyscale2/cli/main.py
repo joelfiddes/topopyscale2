@@ -302,19 +302,6 @@ def fetch_forcing(
     console.print("[green]Forcing data downloaded.[/green]")
 
 
-def _live_dashboard_updater():
-    """``update_live_dashboard`` when the dashboard module ships, else a no-op.
-
-    The live status page is a SnowMapper product; a core-only release has none, and
-    run progress is still written by ``_write_progress`` (progress.json).
-    """
-    try:
-        from topopyscale2.outputs.dashboard import update_live_dashboard
-    except ImportError:
-        return lambda *args, **kwargs: None
-    return update_live_dashboard
-
-
 def _write_progress(sim_dir: Path, steps: list[dict]) -> None:
     """Write progress state to JSON for dashboard consumption."""
     import json
@@ -370,7 +357,6 @@ def run(
         compute_clearness_index,
         compute_solar_elevation,
     )
-    update_live_dashboard = _live_dashboard_updater()
 
     # Set up logging to both console and file
     log_file = config.parent / "simulation.log"
@@ -441,10 +427,6 @@ def run(
         console.print("\n[yellow]Dry run mode - no actions taken.[/yellow]")
         return
 
-    # Create live dashboard at start
-    update_live_dashboard(config_dir, status="Running", step="Initializing...")
-    console.print(f"  Dashboard: {config_dir / 'dashboard.html'}")
-
     # Initialize progress tracking
     progress_steps = [
         {"name": "Domain setup", "status": "pending", "completed": 0, "total": 4, "detail": "sub-steps"},
@@ -460,7 +442,6 @@ def run(
 
     # === 1. Setup domain ===
     console.print("\n[bold]Step 1: Domain Setup[/bold]")
-    update_live_dashboard(config_dir, status="Running", step="Step 1: Domain Setup")
     progress_steps[0]["status"] = "active"
     _write_progress(config_dir, progress_steps)
 
@@ -543,7 +524,6 @@ def run(
                       f"(forcing {_forcing_bytes_est / 1e9:.1f} + output {_output_bytes_est / 1e9:.1f}) "
                       f"exceeds ~{_available_ram / 1e9:.0f} GB RAM limit — "
                       f"processing in {_n_chunks} chunk(s) of {_chunk_years} year(s)[/yellow]")
-        update_live_dashboard(config_dir, status="Running", step="Step 2: Chunked processing")
         progress_steps[1]["status"] = "active"
         _write_progress(config_dir, progress_steps)
 
@@ -587,8 +567,6 @@ def run(
         for ci, chunk_yrs in enumerate(_year_chunks):
             y_start, y_end = chunk_yrs[0], chunk_yrs[-1]
             console.print(f"\n  [bold]Chunk {ci + 1}/{_n_chunks}: {y_start}–{y_end}[/bold]")
-            update_live_dashboard(config_dir, status="Running",
-                                  step=f"Chunk {ci + 1}/{_n_chunks} ({y_start}–{y_end})")
 
             # Fetch forcing for this chunk's time range only
             chunk_time_range = [f"{y_start}-01-01", f"{y_end}-12-31"]
@@ -693,7 +671,6 @@ def run(
 
         # === 2. Fetch forcing ===
         console.print("\n[bold]Step 2: Fetch Forcing[/bold]")
-        update_live_dashboard(config_dir, status="Running", step="Step 2: Fetch Forcing")
         progress_steps[1]["status"] = "active"
         _write_progress(config_dir, progress_steps)
         domain.fetch_forcing()
@@ -723,7 +700,6 @@ def run(
 
         # === 3. Resolve variable groups and compute derived quantities ===
         console.print("\n[bold]Step 3: Derived Quantities[/bold]")
-        update_live_dashboard(config_dir, status="Running", step="Step 3: Derived Quantities")
         progress_steps[2]["status"] = "active"
         _write_progress(config_dir, progress_steps)
 
@@ -760,7 +736,6 @@ def run(
 
         # === 4. Run downscaling ===
         console.print(f"\n[bold]Step 4: Downscaling ({kernel_backend})[/bold]")
-        update_live_dashboard(config_dir, status="Running", step="Step 4: Downscaling")
 
         n_workers = cfg.execution.n_workers if hasattr(cfg, "execution") else 1
         precip_grad = (cfg.downscaling.precip_gradient
@@ -817,7 +792,6 @@ def run(
 
         # === 6. Write output ===
         console.print(f"\n[bold]Step 5: Write Output ({cfg.output.format})[/bold]")
-        update_live_dashboard(config_dir, status="Running", step="Step 5: Write Output")
         progress_steps[4]["status"] = "active"
         _write_progress(config_dir, progress_steps)
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -873,7 +847,6 @@ def run(
         progress_file.unlink()
 
     # Final dashboard update
-    update_live_dashboard(config_dir, status="Complete", step=f"Finished in {total_time:.1f}s")
 
 
 def _run_downscale_pipeline(
@@ -919,7 +892,6 @@ def _run_downscale_pipeline(
         synthesize_longwave,
     )
     from topopyscale2.inputs.units import convert_era5_pressure, convert_era5_surface
-    update_live_dashboard = _live_dashboard_updater()
 
     prefix = f"[{label}] " if label else ""
 
@@ -942,7 +914,6 @@ def _run_downscale_pipeline(
 
     # === Derived quantities ===
     console.print(f"\n[bold]{prefix}Derived Quantities[/bold]")
-    update_live_dashboard(config_dir, status="Running", step=f"{prefix}Derived Quantities")
     progress_steps[derived_step]["status"] = "active"
     _write_progress(config_dir, progress_steps)
 
@@ -973,7 +944,6 @@ def _run_downscale_pipeline(
 
     # === Downscaling ===
     console.print(f"\n[bold]{prefix}Downscaling ({kernel_backend})[/bold]")
-    update_live_dashboard(config_dir, status="Running", step=f"{prefix}Downscaling")
 
     n_workers = cfg.execution.n_workers if hasattr(cfg, "execution") else 1
     precip_grad = (cfg.downscaling.precip_gradient
@@ -1031,7 +1001,6 @@ def _run_downscale_pipeline(
 
     # === Write output ===
     console.print(f"\n[bold]Write Output ({cfg.output.format})[/bold]")
-    update_live_dashboard(config_dir, status="Running", step="Write Output")
     progress_steps[output_step]["status"] = "active"
     _write_progress(config_dir, progress_steps)
     output_dir = Path(cfg.output.directory)
