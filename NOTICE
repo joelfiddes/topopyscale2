@@ -18,8 +18,8 @@ Not covered by the MIT License
 Third-party components
 ----------------------
 - `tps2 ui` loads Leaflet 1.9.4 (BSD-2-Clause) from cdnjs and basemap tiles in the
-  browser at run time: OpenStreetMap (© OpenStreetMap contributors, ODbL; the default),
-  OpenTopoMap (CC-BY-SA), Esri World Imagery (© Esri and its providers) and CARTO
+  browser at run time: OpenTopoMap (CC-BY-SA; the default), OpenStreetMap (© OpenStreetMap
+  contributors, ODbL), Esri World Imagery (© Esri and its providers) and CARTO
   (© CARTO). None is distributed with TPS2; each is shown with its attribution.
 
 Data in examples/forcing_demo

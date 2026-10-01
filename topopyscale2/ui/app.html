@@ -164,7 +164,7 @@ function drawRect() {
 }
 if (window.L) {
   map = L.map("map").setView([46.8, 9.8], 9);
-  // Basemaps: OpenStreetMap is the default; the switcher (top right) offers the others.
+  // Basemaps: OpenTopoMap (terrain) is the default; the switcher (top right) offers the others.
   const basemaps = {
     "OpenStreetMap": L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
       { maxZoom: 19, attribution: "© OpenStreetMap contributors" }),
@@ -175,7 +175,7 @@ if (window.L) {
     "Light (CARTO)": L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
       { maxZoom: 19, subdomains: "abcd", attribution: "© OpenStreetMap contributors © CARTO" }),
   };
-  basemaps["OpenStreetMap"].addTo(map);
+  basemaps["Topographic (OpenTopoMap)"].addTo(map);
   L.control.layers(basemaps, null, { position: "topright" }).addTo(map);
   map.on("click", ev => {
     const { lat, lng } = ev.latlng;
