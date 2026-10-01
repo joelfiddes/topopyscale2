@@ -39,6 +39,9 @@ code { font: 13px ui-monospace, Menlo, Consolas, monospace; background: var(--bg
 .dsgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 @media (max-width: 900px) { .dsgrid { grid-template-columns: 1fr; } }
 input:disabled, select:disabled { opacity: .45; }
+/* the form styles above must not reach Leaflet's basemap switcher */
+.leaflet-control-layers label { display: flex; align-items: center; gap: 6px; margin: 2px 0; font-size: 13px; color: #16202b; }
+.leaflet-control-layers input { width: auto; margin: 0; }
 .hidden { display: none !important; }
 </style>
 </head>
@@ -161,8 +164,19 @@ function drawRect() {
 }
 if (window.L) {
   map = L.map("map").setView([46.8, 9.8], 9);
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-    { maxZoom: 16, attribution: "© OpenStreetMap contributors" }).addTo(map);
+  // Basemaps: OpenStreetMap is the default; the switcher (top right) offers the others.
+  const basemaps = {
+    "OpenStreetMap": L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      { maxZoom: 19, attribution: "© OpenStreetMap contributors" }),
+    "Topographic (OpenTopoMap)": L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+      { maxZoom: 17, attribution: "Map data © OpenStreetMap contributors, SRTM · style © OpenTopoMap (CC-BY-SA)" }),
+    "Satellite (Esri)": L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      { maxZoom: 18, attribution: "Imagery © Esri, Maxar, Earthstar Geographics, and the GIS User Community" }),
+    "Light (CARTO)": L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+      { maxZoom: 19, subdomains: "abcd", attribution: "© OpenStreetMap contributors © CARTO" }),
+  };
+  basemaps["OpenStreetMap"].addTo(map);
+  L.control.layers(basemaps, null, { position: "topright" }).addTo(map);
   map.on("click", ev => {
     const { lat, lng } = ev.latlng;
     if (!firstCorner) { firstCorner = [lat, lng]; $("mapNote").textContent = "Now click the opposite corner."; return; }
