@@ -233,6 +233,30 @@ def start_run(state: UIState) -> None:
         log.close()
 
 
+FINISHED_MARKER = "Pipeline complete"
+
+
+def run_status(state: UIState) -> str:
+    """What happened to the run: running, finished, failed, stopped, interrupted, or none.
+
+    "interrupted" is a run this server did not start (or no longer tracks, e.g. after a
+    restart) whose log never reached the end: the process was killed, or the machine slept
+    and the run lost its connection. Without this the page could not tell a dead run from
+    a quiet one.
+    """
+    if state.proc is not None:
+        rc = state.proc.poll()
+        if rc is None:
+            return "running"
+        if rc == 0:
+            return "finished"
+        return "stopped" if rc < 0 else "failed"
+    if not state.log_path.exists():
+        return "none"
+    tail = state.log_path.read_bytes()[-20_000:].decode("utf-8", errors="replace")
+    return "finished" if FINISHED_MARKER in tail else "interrupted"
+
+
 def read_log(state: UIState, offset: int) -> dict:
     data = b""
     if state.log_path.exists():
@@ -240,8 +264,9 @@ def read_log(state: UIState, offset: int) -> dict:
             f.seek(max(0, offset))
             data = f.read(256_000)
     rc = None if state.proc is None else state.proc.poll()
+    status = run_status(state)
     return {"text": data.decode("utf-8", errors="replace"), "offset": max(0, offset) + len(data),
-            "running": state.running(), "returncode": rc}
+            "running": status == "running", "returncode": rc, "status": status}
 
 
 def forcing_available(state: UIState) -> bool:
@@ -289,6 +314,8 @@ def make_handler(state: UIState):
                     "sim_dir": str(state.sim_dir), "config_exists": state.config_path.exists(),
                     "values": managed_values(cfg), "not_in_form": NOT_IN_FORM,
                     "running": state.running(), "forcing": forcing_available(state),
+                    "run_status": run_status(state),
+                    "log_size": state.log_path.stat().st_size if state.log_path.exists() else 0,
                 })
             if url.path == "/api/log":
                 q = parse_qs(url.query)

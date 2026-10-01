@@ -243,8 +243,13 @@ async function load() {
   syncEnabled();
   if (map) { drawRect(); if (rect) map.fitBounds(rect.getBounds(), { padding: [30, 30] }); }
   $("view").disabled = !st.forcing;
-  if (st.running) { $("run").disabled = true; poll(); }
   msg(st.config_exists ? "Loaded the existing config.yaml." : "No config.yaml yet: these are the starting values.");
+  // Show the current or previous run's log and state, even after the server restarted.
+  if (st.run_status !== "none") {
+    if (st.running) { $("run").disabled = true; msg("A run is going; its log is below."); }
+    logOffset = Math.max(0, st.log_size - 60000);   // the end, where the reason is
+    poll();
+  }
 }
 
 $("save").addEventListener("click", async () => {
@@ -255,23 +260,42 @@ $("run").addEventListener("click", async () => {
   try {
     await api("/api/config", form());
     await api("/api/run", {});
-    $("run").disabled = true; $("view").disabled = true; $("log").textContent = ""; logOffset = 0;
+    $("run").disabled = true; $("view").disabled = true; $("log").textContent = ""; logOffset = 0; logRaw = "";
     msg("Running…"); poll();
   } catch (e) { msg(e.message, "bad"); }
 });
+// One message per run state, so a dead run never looks like a quiet one.
+function showStatus(status, rc) {
+  const T = {
+    finished: ["Run finished.", "good"],
+    failed: [`Run failed (exit ${rc}); the end of the log says why.`, "bad"],
+    stopped: ["Run stopped: the process was killed before it finished.", "bad"],
+    interrupted: ["The last run did not finish: the process ended early (killed, or the computer slept and lost its connection). Press Run to resume; finished downloads are kept.", "bad"],
+  }[status];
+  if (T) msg(T[0], T[1]);
+  if (status === "finished") $("view").disabled = false;
+}
 $("view").addEventListener("click", () => window.open("/view", "_blank", "noopener"));
 
 // ---------- log ----------
-let logOffset = 0;
+let logOffset = 0, logRaw = "";
+// Progress bars rewrite their line with carriage returns and cursor escapes; keep each
+// line's final state so the log reads like a terminal, not a smear.
+function cleanLog(t) {
+  return t.replace(/\x1b\[[0-9;]*[A-Za-z]/g, "").split("\n")
+    .map(l => l.split("\r").filter(x => x.trim()).pop() || "").filter((l, i, a) => l || (a[i - 1] && a[i - 1] !== "")).join("\n");
+}
 async function poll() {
   try {
     const r = await fetch(`/api/log?offset=${logOffset}`).then(x => x.json());
-    if (r.text) { const el = $("log"); el.textContent += r.text; el.scrollTop = el.scrollHeight; }
+    if (r.text) {
+      logRaw += r.text;
+      const el = $("log"); el.textContent = cleanLog(logRaw); el.scrollTop = el.scrollHeight;
+    }
     logOffset = r.offset;
     if (r.running) { setTimeout(poll, 1000); return; }
     $("run").disabled = false;
-    if (r.returncode === 0) { msg("Run finished.", "good"); $("view").disabled = false; }
-    else if (r.returncode !== null) msg(`Run failed (exit ${r.returncode}); see the log.`, "bad");
+    showStatus(r.status, r.returncode);
   } catch (e) { setTimeout(poll, 2000); }
 }
 

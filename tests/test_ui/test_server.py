@@ -178,3 +178,57 @@ def test_bad_downscaling_options_are_rejected(ui, bad, match):
     port, state = ui()
     status, body = req(port, "POST", "/api/config", {**FORM, **bad}, token=state.token)
     assert status == 400 and match in body["error"], body
+
+
+def _wait_done(port, timeout=20):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        r = req(port, "GET", "/api/log?offset=0")[1]
+        if not r["running"]:
+            return r
+        time.sleep(0.1)
+    raise AssertionError("run did not finish")
+
+
+def test_status_finished_and_failed(tmp_path):
+    for code, expected in ((0, "finished"), (3, "failed")):
+        server, state = make_server(tmp_path / f"s{code}", port=0,
+                                    run_command=[sys.executable, "-c", f"import sys; sys.exit({code})"])
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        port = server.server_address[1]
+        try:
+            req(port, "POST", "/api/config", FORM, token=state.token)
+            req(port, "POST", "/api/run", {}, token=state.token)
+            r = _wait_done(port)
+            assert r["status"] == expected and r["returncode"] == code
+        finally:
+            server.shutdown()
+            server.server_close()
+
+
+def test_status_stopped_when_killed(ui):
+    port, state = ui(seconds=30)
+    req(port, "POST", "/api/config", FORM, token=state.token)
+    req(port, "POST", "/api/run", {}, token=state.token)
+    state.proc.kill()
+    state.proc.wait()
+    assert _wait_done(port)["status"] == "stopped"
+
+
+@pytest.mark.parametrize("log,expected", [
+    ("Step 2: Fetch Forcing\nDownloading ERA5 ...\n", "interrupted"),
+    ("...\nPipeline complete in 43.4s\n", "finished"),
+])
+def test_status_after_a_server_restart_comes_from_the_log(ui, tmp_path, log, expected):
+    sim = tmp_path / "restarted"
+    sim.mkdir()
+    (sim / "ui_run.log").write_text(log)
+    port, _ = ui(sim_dir=sim)
+    st = req(port, "GET", "/api/state")[1]
+    assert st["run_status"] == expected and not st["running"] and st["log_size"] == len(log)
+    assert req(port, "GET", "/api/log?offset=0")[1]["status"] == expected
+
+
+def test_status_none_before_any_run(ui):
+    port, _ = ui()
+    assert req(port, "GET", "/api/state")[1]["run_status"] == "none"
