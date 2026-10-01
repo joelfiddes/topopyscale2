@@ -1,0 +1,46 @@
+# Roadmap
+
+Public releases of TopoPyScale 2 are static snapshots of the **downscaling engine**:
+terrain units, ERA5 downscaling, the forcing output, and the tools to configure, run and look
+at it. Development continues in a private repository, where the pieces below already exist in
+some form and are used on real domains. They will be released as they become robust enough
+to support without the people who wrote them in the room.
+
+There are no dates here on purpose. To ask for something, or to say which of these matters
+most to you, open an issue (see [Contributing](contributing.md)).
+
+## Models driven by the forcing
+
+- **Snow model (FSM).** The Factorial Snow Model run on every terrain unit: snow depth, SWE,
+  melt and runoff, with a Rust core. Known issues are measured and being fixed first: snow-free
+  ground too cold, no overburden compaction, late melt-out at mid elevations.
+- **Glacier-enabled snow model.** Ice melt under the snowpack, so units above the
+  equilibrium line lose mass instead of accumulating snow for ever.
+- **More snow models.** SNOWPACK and others fed from the same forcing export.
+- **Hydrology.** HBV and GR4J catchment models on the downscaled forcing.
+
+## Observations and validation
+
+- **Station data.** Fetching and quality-controlling station observations (global archives and
+  national networks), with explicit timestamp and unit conventions.
+- **A validation lab.** Scoring forcing and snow against stations, snow courses, satellite
+  snow cover and glacier mass balance, with held-out data and reproducible scorecards.
+
+## Better forcing
+
+- **Data assimilation.** Ensemble methods that use satellite snow cover to correct the
+  precipitation and temperature forcing.
+- **Forecasts.** Downscaling ECMWF forecasts (deterministic and ensemble) and blending them
+  onto the reanalysis.
+- **Learned corrections.** Machine-learning precipitation corrections trained on gauges.
+- **A differentiable backend.** JAX versions of the kernels, for calibration by gradient.
+
+## Climate scenarios
+
+- **TopoCLIM.** Per-unit quantile mapping of CMIP6 projections against the downscaled
+  reanalysis, for future snow and ground temperature.
+
+## Products
+
+- **Dashboards and warnings.** Map-based snow and weather products built from the model
+  output, as used in operational snow forecasting.

@@ -1,0 +1,43 @@
+# Synthetic dataset bundle used by the lab's own tests and as a CI regression
+# domain. The lab's tests must never reach for bench data, so this stands in for
+# a real bundle (tps2_benches/<bench>/registry.yaml) and exercises every
+# feature of the schema: a declared domain, inherited coverage from a core
+# domain, a source alias, an entry with a declared extent and one without.
+schema_version: 1
+bundle: fixture
+domains: [fixture_bench]
+parent_domains: [alps]
+
+datasets:
+  - id: fixture_station_hs
+    stages: [S2]
+    variables: [snow_depth]
+    role: validation
+    domains: [fixture_bench]
+    access: "synthetic; tests only"
+    status: in_use
+    temporal_resolution: daily
+    uncertainty: "+/- 2 cm"
+    caveats:
+      - "synthetic data — never a real result"
+    notes: "Stands in for a bench station network."
+    extent: [7.0, 46.0, 8.0, 47.0]
+
+  - id: fixture_swe_reference
+    stages: [S4]
+    variables: [swe]
+    role: baseline
+    domains: [fixture_bench]
+    access: "synthetic; tests only"
+    status: accessible
+
+  - id: fixture_winter_mb
+    stages: [G]
+    variables: [mass_balance_winter]
+    role: both_holdout
+    domains: [fixture_bench]
+    access: "synthetic; tests only"
+    status: accessible
+
+source_aliases:
+  fixture_net: fixture_station_hs

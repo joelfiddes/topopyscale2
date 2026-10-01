@@ -1,0 +1,103 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "topopyscale2"
+version = "0.1.0"
+description = "Topographic downscaling of meteorological forcing at hillslope resolution"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    { name = "Joel Fiddes" },
+]
+keywords = ["downscaling", "meteorology", "topography", "ERA5", "mountain"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+]
+dependencies = [
+    "numpy>=1.24",
+    "xarray>=2023.0",
+    "dask[complete]>=2023.0",
+    "rasterio>=1.3",
+    "geopandas>=0.13",
+    "pydantic>=2.0",
+    "typer>=0.9",
+    "scipy>=1.11",
+    "scikit-learn>=1.3",
+    "rich>=13.0",
+    "pyyaml>=6.0",
+    "netCDF4>=1.6",
+    "fsspec",
+    "tqdm",
+    "tenacity",
+    "requests",
+    "dem-stitcher",
+    "pandas",
+    "zarr>=2.16",
+    # imported at run time by outputs/climatology (previous-year regrid) and the
+    # satellite readers; it was only ever present transitively
+    "rioxarray>=0.15",
+    # imported eagerly via outputs/__init__ (plots) and da/diagnostics
+    "matplotlib>=3.7",
+]
+
+[project.urls]
+Repository = "https://github.com/joelfiddes/topopyscale2"
+Issues = "https://github.com/joelfiddes/topopyscale2/issues"
+Changelog = "https://github.com/joelfiddes/topopyscale2/releases"
+
+[project.optional-dependencies]
+google = ["gcsfs", "h5netcdf"]
+cds = ["cdsapi"]
+s3 = ["s3fs"]
+# spatial_mode: catchments (flow routing for catchment units)
+catchments = ["pyflwdir"]
+# inputs backend: Open-Meteo ERA5 archive on S3
+openmeteo = ["omfiles", "fsspec", "s3fs"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.3",
+    "mypy>=1.8",
+    "maturin>=1.5",
+    "pre-commit>=3.0",
+]
+
+[project.scripts]
+tps2 = "topopyscale2.cli.main:app"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "topopyscale2.core._rust_kernels"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+# Accepted debt (2026-06): ratchet down, do not add new instances.
+# E501 line-too-long (~480), F841 unused-variable (~48),
+# E741 ambiguous-name (~18), E402 import-not-at-top (~10).
+ignore = ["E501", "F841", "E741", "E402"]
+
+[tool.ruff.lint.per-file-ignores]
+# __init__.py imports are deliberate re-exports (public API)
+"__init__.py" = ["F401"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true

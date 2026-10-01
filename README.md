@@ -1,0 +1,123 @@
+# TopoPyScale 2
+
+Topographic downscaling of climate reanalysis onto real mountain terrain.
+
+TopoPyScale 2 (TPS2) takes ERA5 reanalysis (about 31&nbsp;km per grid cell), groups a
+30–90&nbsp;m DEM into terrain units of similar elevation, slope, aspect and sky view, and gives
+each unit its own hourly forcing:
+
+```
+ERA5 (~31 km) ──► TPS2 ──► hourly forcing per terrain unit (NetCDF / Zarr, CF units)
+                   │
+                   ├── Temperature, humidity   interpolated from the pressure levels to each unit
+                   ├── Shortwave               slope, aspect, terrain shading, sky view
+                   ├── Longwave                elevation and sky view
+                   ├── Precipitation           split into rain and snow by wet-bulb temperature
+                   └── Wind                    log profile to the unit's height above ground
+```
+
+TPS2 is a ground-up rewrite of [TopoPyScale](https://github.com/ArcticSnow/TopoPyScale)
+(Filhol et al.), with the physics kernels in Python and Rust.
+
+## See it without installing
+
+```bash
+open examples/forcing_demo/demo.html        # macOS  (xdg-open on Linux)
+```
+
+One season (October 2023 to July 2024) above Davos, Switzerland: one ERA5 grid cell, which sees
+smooth ground at about 2000&nbsp;m, downscaled onto 150 terrain units between 1041 and
+3097&nbsp;m. Pick a variable and press play; beside the map, each unit's value against its
+elevation shows what the downscaling does. Everything is embedded; it works offline.
+
+## Install
+
+```bash
+# A release wheel (Linux and macOS, x86_64 and arm64, Python 3.11–3.13; no Rust needed)
+pip install topopyscale2-*.whl
+
+# From source with conda (conda-forge provides GDAL/rasterio and the Rust toolchain)
+conda env create -f environment.yml && conda activate tps2
+
+# From source with pip (needs a Rust toolchain), or Docker
+pip install .
+docker build -t tps2 .
+```
+
+If the compiled kernels are ever missing, TPS2 says so once and uses its Python kernels: same
+results, slower.
+
+## Run
+
+The demo, step by step (set up → fetch ERA5 → downscale → results page):
+
+```bash
+examples/forcing_demo/run_demo.sh
+```
+
+With a local web page, to pick the area on a map, set the downscaling options, run, and view the
+result:
+
+```bash
+tps2 ui ~/sim/davos
+```
+
+Or from the command line:
+
+```bash
+tps2 init ~/sim/davos --bbox 9.70,46.72,9.98,46.88 --time 2023-10-01,2023-10-31
+tps2 run  --config ~/sim/davos/config.yaml      # DEM → terrain units → ERA5 → downscaling
+tps2 view ~/sim/davos                           # the forcing page for your run
+```
+
+ERA5 comes from Google's public archive by default, with no account needed. The forcing lands
+in `output/forcing.nc` (or `.zarr`) with CF units on every variable.
+
+| Command | What it does |
+|---|---|
+| `tps2 ui <dir>` | Local page: configure, run, view |
+| `tps2 init <dir>` | New simulation directory with a template `config.yaml` |
+| `tps2 run -c <config>` | The whole pipeline |
+| `tps2 setup` / `fetch-forcing` | Terrain units only / ERA5 only |
+| `tps2 view <dir>` | Self-contained HTML page of the downscaled forcing |
+| `tps2 info` / `preflight` / `evaluate-clusters` | Inspect a domain, check a config, compare cluster counts |
+| `tps2 build-cache` | Build a local ERA5 Zarr cache for a region |
+
+## Documentation
+
+The documentation site is built from `docs/` (`pip install -r docs/requirements.txt && mkdocs
+serve`): getting started, the downscaling algorithms, the data model, **known limitations with
+numbers**, and a reference for every command and configuration key generated from the code.
+Read [`docs/known_limitations.md`](docs/known_limitations.md) before relying on a result:
+precipitation amount, diurnal temperature range and wind have measured weaknesses.
+
+## Roadmap
+
+This is a static snapshot of the downscaling engine. Development continues privately: snow and
+glacier models, station validation, data assimilation, forecasts and climate scenarios exist
+and will be released as they mature. See [`docs/roadmap.md`](docs/roadmap.md).
+
+## Contributing
+
+Releases are snapshots of a private development repository, so **pull requests cannot be
+merged**. Bug reports, feature requests and questions are very welcome as
+[issues](../../issues/new/choose); drafting one with an AI assistant is fine (point it at
+[`AGENTS.md`](AGENTS.md)). See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+## Citing TPS2
+
+TPS2 is developed by Joel Fiddes, [Mountain Futures](https://mountainfutures.ch). If you use it
+in research, please cite it using [`CITATION.cff`](CITATION.cff) (GitHub's "Cite this
+repository" button), and for research that builds substantially on TPS2, please consider
+getting in touch about co-authorship.
+
+## Acknowledgements
+
+TPS2 builds on the original [TopoPyScale](https://github.com/ArcticSnow/TopoPyScale) by Simon
+Filhol, Joel Fiddes and contributors. The downscaling algorithms derive from Fiddes & Gruber
+(2014) and Fiddes et al. (2022).
+
+## License
+
+MIT; see [LICENSE](LICENSE). [NOTICE](NOTICE) records what the licence does not cover (logos and
+trademarks) and the third-party components and data shipped with the example.

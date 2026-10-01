@@ -1,0 +1,159 @@
+# TopoPyScale 2.0 - Phase 2 Full Example Configuration
+# Swiss Alps snow application with SnowMapper
+
+domain:
+  bbox: [6.5, 45.8, 10.5, 47.9]
+  dem_source: glo_30
+  spatial_mode: polygons
+  crs: "EPSG:2056"
+
+clustering:
+  method: kmeans
+  features:
+    - elevation
+    - slope
+    - cos_aspect
+    - sin_aspect
+    - svf
+    - sx
+  n_clusters: 500
+  feature_standardization: true
+
+polygons:
+  method: hru
+  respect_catchments: true
+  elevation_bands: 200.0
+  aspect_classes: 4
+  min_area_m2: 50000.0
+
+surface_types:
+  source: esa_worldcover
+  stratify: true
+  types:
+    glacier:
+      n_clusters: 50
+      physics: glacier
+    forest:
+      n_clusters: 100
+      extra_features: [canopy_height]
+      physics: forest
+    open:
+      n_clusters: 200
+      physics: standard
+    rock:
+      n_clusters: 50
+      physics: standard
+
+inputs:
+  primary: era5
+  backend: google
+  time_range: ["2020-10-01", "2021-09-30"]
+  pressure_levels: [500, 700, 850, 1000]
+  time_resolution: "1H"
+  output_format: netcdf
+  max_workers: 8
+  cache_dir: ./inputs/climate/
+  sources:
+    - name: era5_primary
+      type: era5
+      priority: 1
+      resolution_m: 31000.0
+    - name: hres_forecast
+      type: hres
+      priority: 2
+      resolution_m: 9000.0
+  blending:
+    enabled: true
+    method: priority
+    gap_fill: true
+
+downscaling:
+  temperature: lapse_rate
+  radiation: toposcale
+  wind: winstral
+  precipitation: elevation_gradient
+  humidity: standard
+  wind_config:
+    method: winstral
+    sx_search_distance_m: 300.0
+    sx_n_directions: 36
+    roughness_lengths:
+      glacier: 0.001
+      open: 0.03
+      rock: 0.01
+      forest: 1.0
+    displacement_heights:
+      glacier: 0.0
+      open: 0.0
+      rock: 0.0
+      forest: 10.0
+  redistribution:
+    wind_transport: true
+    avalanche: true
+    avalanche_slope_threshold: 35.0
+    transport_coefficient: 0.5
+
+output:
+  format: netcdf
+  directory: ./output/forcing/
+  variables:
+    - temperature
+    - precipitation
+    - shortwave_direct
+    - shortwave_diffuse
+    - longwave
+    - wind_speed
+    - wind_direction
+    - humidity_specific
+    - humidity_relative
+    - pressure
+    - rainfall
+    - snowfall
+  temporal_resolution: hourly
+  compression: true
+
+execution:
+  backend: local
+  n_workers: 8
+  kernel_backend: rust
+  chunks_time: monthly
+  chunks_space: 100
+  slurm:
+    partition: normal
+    time: "48:00:00"
+    mem_per_cpu: "8G"
+    account: snow_research
+    cpus_per_task: 8
+
+qc:
+  range_checks: true
+  temporal_consistency: true
+  spatial_consistency: true
+  flatline_hours: 24
+  suspect_uncertainty_inflation: 3.0
+
+storage:
+  input_cache_format: zarr
+  working_format: zarr
+  compression: zstd
+  max_cache_gb: 100.0
+
+validation:
+  stations:
+    metrics: [bias, rmse, kge, mae, pod, far, csi]
+    by_season: true
+    by_elevation_band: true
+  output_dir: ./validation/
+
+application:
+  model: fsm
+  feedback:
+    enabled: true
+    method: sdc
+    observation_type: fsca
+  state_da:
+    enabled: false
+    method: enkf
+    ensemble_size: 50
+    localization_radius_m: 5000.0
+  model_path: /usr/local/bin/fsm

@@ -1,0 +1,34 @@
+name: Feature request
+description: Something TopoPyScale 2 should do.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem you are trying to solve, not only the solution you have in mind.
+        Several features already exist in development: see the [roadmap](../blob/main/docs/roadmap.md).
+        Drafting this with an AI assistant is fine: point it at `AGENTS.md`.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are trying to do, and what stops you.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: What would count as done
+      description: A check that would show it works.
+    validations:
+      required: true
+  - type: textarea
+    id: roadmap
+    attributes:
+      label: Is it on the roadmap?
+      description: If so, which item, and why it matters for your work. This helps set priorities.
+  - type: textarea
+    id: fix
+    attributes:
+      label: A possible approach or patch
+      description: Optional. Patches are applied in the development repository and credited.

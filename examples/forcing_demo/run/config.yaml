@@ -1,0 +1,32 @@
+# TPS2 forcing demo — Davos / Weissfluhjoch, water year 2024 (Oct 2023 – Jul 2024).
+# The configuration that produced demo.html. See README.md.
+domain:
+  bbox: [9.70, 46.72, 9.98, 46.88]
+  dem_source: glo_90
+  spatial_mode: clusters
+  horizon_n_directions: 8
+  horizon_max_distance_m: 3000
+inputs:
+  primary: era5
+  backend: google                    # Google ARCO-ERA5: no account or API key
+  time_range: ["2023-10-01", "2024-07-31"]
+  pressure_levels: [500, 700, 850, 1000]
+clustering:
+  method: kmeans
+  n_clusters: 150
+  features: [elevation, slope, aspect, svf]
+downscaling:
+  mode: full
+  radiation: slope_aspect_svf
+  phase_method: wet_bulb
+  humidity: preserve_rh
+  wind: log_profile
+execution:
+  kernel_backend: rust
+  n_workers: 0
+output:
+  format: netcdf
+  directory: ./output
+storage:
+  dem_cache: ./dem_cache
+  forcing_cache: ./forcing_cache

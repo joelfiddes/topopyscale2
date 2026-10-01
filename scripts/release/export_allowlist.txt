@@ -1,0 +1,155 @@
+# Public v1 allowlist: the ONLY paths that ship in a public snapshot (pivot 2026-09-30).
+# Anything not matched here stays private by default.
+#
+# Syntax (read by scripts/release/allowlist.py):
+#   dir/        the directory and everything under it
+#   path        an exact file, or an fnmatch glob against the full posix path
+#   !pattern    exclude, even if an earlier line included it (the last match wins)
+#
+# The package section is also the v1 IMPORT BOUNDARY:
+# tests/test_release/test_import_boundary.py fails if a module listed here imports one
+# that is not. Non-package paths (Rust, packaging, docs, tests) are added by #210.
+
+# --- package: v1 = downscaling core -----------------------------------------
+topopyscale2/__init__.py
+topopyscale2/_optional.py
+topopyscale2/domain.py
+topopyscale2/preflight.py
+topopyscale2/water_year.py
+
+topopyscale2/cli/__init__.py
+topopyscale2/cli/_app.py
+topopyscale2/cli/main.py
+
+topopyscale2/config/
+
+topopyscale2/ui/
+!topopyscale2/config/examples/*.log
+
+topopyscale2/core/
+!topopyscale2/core/jax_kernels/
+
+topopyscale2/spatial/
+topopyscale2/storage/
+
+topopyscale2/inputs/__init__.py
+topopyscale2/inputs/base.py
+topopyscale2/inputs/custom.py
+topopyscale2/inputs/dem_download.py
+topopyscale2/inputs/derived.py
+topopyscale2/inputs/era5.py
+topopyscale2/inputs/longwave.py
+topopyscale2/inputs/qc.py
+topopyscale2/inputs/resolution.py
+topopyscale2/inputs/rgi.py
+topopyscale2/inputs/units.py
+topopyscale2/inputs/nwp_downloader/
+!topopyscale2/inputs/nwp_downloader/forecast/
+!topopyscale2/inputs/nwp_downloader/ifs/
+!topopyscale2/inputs/nwp_downloader/ifs_forecast.py
+
+topopyscale2/outputs/__init__.py
+topopyscale2/outputs/base.py
+topopyscale2/outputs/csv_writer.py
+topopyscale2/outputs/forcing_page.py
+topopyscale2/outputs/forcing_page_template.html
+topopyscale2/outputs/netcdf.py
+topopyscale2/outputs/plots.py
+topopyscale2/outputs/raster_mapper.py
+topopyscale2/outputs/smet.py
+topopyscale2/outputs/zarr_writer.py
+
+# --- Rust kernels (snow-model kernels are private; built only with feature "snow") --
+Cargo.toml
+src/
+!src/fsm1.rs
+!src/gfsm.rs
+
+# --- packaging, licence, citation -------------------------------------------------
+pyproject.toml
+LICENSE
+CITATION.cff
+# public variants (transforms.py moves them to README.md, AGENTS.md, NOTICE, ...)
+README.public.md
+AGENTS.public.md
+NOTICE.public
+
+# --- contribution model: issues, not PRs (#218) -------------------------------------
+CONTRIBUTING.md
+.github/ISSUE_TEMPLATE/
+.github/pull_request_template.public.md
+# wheels: runs only on a v* tag or by hand, so it costs nothing until a release is tagged
+.github/workflows/wheels.yml
+.gitignore
+
+# --- public docs site (transforms.py moves the public variants into place) ---------
+mkdocs.public.yml
+docs/requirements.txt
+docs/assets/
+docs/stylesheets/
+docs/public/
+docs/roadmap.md
+docs/contributing.md
+docs/known_limitations.md
+docs/downscaling_algorithms.md
+docs/datamodel.md
+docs/reference/index.md
+docs/reference/api.md
+docs/reference/public/
+
+# --- install routes ----------------------------------------------------------------
+Cargo.lock
+environment.yml
+Dockerfile
+
+# --- the shipped demo (rebuilt byte-identical by the clean-install check) -----------
+examples/forcing_demo/
+
+# --- release tooling that a snapshot's own check needs -----------------------------
+scripts/release/allowlist.py
+scripts/release/export_allowlist.txt
+scripts/release/clean_install_check.sh
+
+# --- tests for the shipped code (the boundary test checks their imports too) --------
+tests/__init__.py
+tests/conftest.py
+tests/_release.py
+tests/fixtures/
+tests/test_preflight.py
+tests/test_water_year.py
+tests/test_kernels/
+tests/test_core/
+tests/test_spatial/
+tests/test_storage/
+tests/test_downscale/
+tests/test_domain/
+tests/test_config/
+tests/test_cli/
+tests/test_inputs/
+tests/test_outputs/
+tests/test_release/
+tests/test_ui/
+# tests of code that does not ship
+!tests/test_cli/test_lab.py
+!tests/test_inputs/test_blending.py
+!tests/test_inputs/test_forecast_source_ens.py
+!tests/test_inputs/test_hres.py
+!tests/test_inputs/test_ifs/
+!tests/test_inputs/test_nwp_downloader/test_forecast/
+!tests/test_inputs/test_nwp_downloader/test_parallel.py
+!tests/test_inputs/test_satellite_data/
+!tests/test_inputs/test_station_data/
+!tests/test_inputs/test_undercatch.py
+!tests/test_outputs/test_climatology.py
+!tests/test_outputs/test_crocus.py
+!tests/test_outputs/test_cryogrid.py
+!tests/test_outputs/test_dashboard_info_resources.py
+!tests/test_outputs/test_dashboard_vendored_assets.py
+!tests/test_outputs/test_ensemble.py
+!tests/test_outputs/test_fsm.py
+!tests/test_outputs/test_hbv.py
+!tests/test_outputs/test_partner_logos.py
+!tests/test_outputs/test_snow_page.py
+!tests/test_outputs/test_tile_manifest.py
+!tests/test_outputs/test_water_balance.py
+!tests/test_water_year.py

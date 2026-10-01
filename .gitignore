@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.so
+*.pyd
+
+# Rust
+target/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Secrets
+.env
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Data
+*.nc
+*.zarr/
+*.tif
+*.tiff
+!tests/reference_data/*
+
+# Cache
+era5_cache/
+dem_cache/
+
+# Simulations (local runs, not tracked)
+simulations/
+
+# Local caches and generated artifacts
+sdss_cache/
+station_cache/
+scripts/output/
+docs/*.html
+
+
+# Shipped demo inputs — force-track despite the broad data/cache ignores above
+!examples/davos_demo/run/dem_cache/
+!examples/davos_demo/run/dem_cache/*.tif
+!examples/davos_demo/run/app_output/
+!examples/davos_demo/run/app_output/fsm_output.nc
+!examples/forcing_demo/run/dem_cache/
+!examples/forcing_demo/run/dem_cache/*.tif
+!examples/forcing_demo/run/output/
+!examples/forcing_demo/run/output/forcing_daily.nc
+
+# per-machine settings (hosts, projects, paths) — never committed
+site.env

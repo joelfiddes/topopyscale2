@@ -1,0 +1,30 @@
+TopoPyScale 2 (TPS2)
+Copyright (c) 2026 Joel Fiddes, Mountain Futures
+Developed by Joel Fiddes, Mountain Futures (https://mountainfutures.ch).
+Licensed under the MIT License (see LICENSE).
+
+Origins
+-------
+TPS2 is a ground-up rewrite of TopoPyScale (https://github.com/ArcticSnow/TopoPyScale),
+Copyright (c) 2021 Simon Filhol, Joel Fiddes, Kristofer Aalstad, MIT License.
+Its downscaling algorithms derive from that work.
+
+Not covered by the MIT License
+------------------------------
+- Trademarks and logos. The Mountain Futures name and logos (topopyscale2/ui/logo.svg,
+  docs/assets/mf_logo_reverse.svg, examples/forcing_demo/branding/) are marks of
+  Mountain Futures and are not licensed under the MIT License.
+
+Third-party components
+----------------------
+- `tps2 ui` loads Leaflet 1.9.4 (BSD-2-Clause) from cdnjs and map tiles from
+  OpenStreetMap (© OpenStreetMap contributors, ODbL) in the browser at run time;
+  neither is distributed with TPS2.
+
+Data in examples/forcing_demo
+-----------------------------
+- ERA5 reanalysis: generated using Copernicus Climate Change Service information
+  (C3S / ECMWF); neither the European Commission nor ECMWF is responsible for any use
+  made of it.
+- Copernicus DEM GLO-90: (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH
+  2014-2018, provided under COPERNICUS by the European Union and ESA.

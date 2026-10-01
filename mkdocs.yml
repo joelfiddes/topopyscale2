@@ -1,0 +1,112 @@
+# MkDocs config for the PUBLIC release site. Only valid in an exported snapshot:
+# scripts/release/transforms.py moves it to mkdocs.yml and puts the public pages
+# (docs/public/, docs/reference/public/) at the paths this nav names.
+site_name: TopoPyScale 2
+site_description: Topographic downscaling of meteorological forcing at hillslope resolution
+site_author: Joel Fiddes, Mountain Futures
+copyright: MIT licence · Mountain Futures GmbH
+repo_url: https://github.com/joelfiddes/topopyscale2
+repo_name: joelfiddes/topopyscale2
+# No edit buttons: releases are snapshots, so changes arrive as issues, not pull requests.
+edit_uri: ""
+
+docs_dir: docs
+
+theme:
+  name: material
+  logo: assets/mf_logo_reverse.svg
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+extra:
+  # Material links the header logo here instead of the site root.
+  homepage: https://mountainfutures.ch
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/joelfiddes/topopyscale2
+
+extra_css:
+  - stylesheets/brand.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.arithmatex:
+      generic: true
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: numpy
+            show_source: false
+            show_root_heading: true
+            members_order: source
+            filters: ["!^_"]
+
+validation:
+  # A link to a page that is not in the public site fails the (strict) build.
+  links:
+    not_found: warn
+    unrecognized_links: info
+    anchors: warn
+
+nav:
+  - Home: index.md
+  - Get started: get-started/index.md
+  - Science:
+      - Downscaling algorithms: downscaling_algorithms.md
+      - Data model: datamodel.md
+      - Known limitations: known_limitations.md
+  - Reference:
+      - reference/index.md
+      - CLI: reference/cli.md
+      - Configuration: reference/config.md
+      - Python API: reference/api.md
+  - Roadmap: roadmap.md
+  - Contributing: contributing.md

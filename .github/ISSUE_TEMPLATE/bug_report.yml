@@ -1,0 +1,46 @@
+name: Bug report
+description: Something fails, or a result looks wrong.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. A report a maintainer can reproduce gets fixed fastest.
+        Drafting this with an AI assistant is fine: point it at `AGENTS.md`, and check what it writes.
+        Please check [known limitations](../blob/main/docs/known_limitations.md) first.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: One or two sentences each.
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and full output
+      description: The command you ran and the complete error or log (not a summary).
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: config.yaml
+      description: The smallest config that shows the problem (a small area and a few days is often enough).
+      render: yaml
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: For a wrong-looking result
+      description: The numbers, where your comparison comes from (station, map, paper), location, elevation, period, variable, daily or hourly.
+  - type: input
+    id: version
+    attributes:
+      label: Versions
+      description: "`tps2 --version`, Python version, operating system"
+      placeholder: "TopoPyScale 0.1.0, Python 3.11, macOS 15"
+    validations:
+      required: true

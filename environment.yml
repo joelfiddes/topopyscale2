@@ -1,0 +1,49 @@
+# Conda environment for TopoPyScale 2.0
+#
+# The most reliable install path: conda-forge resolves the geospatial stack
+# (GDAL / rasterio / geopandas) and the Rust toolchain needed to build the
+# Rust kernels, so you don't have to install anything by hand.
+#
+#   conda env create -f environment.yml      # creates the `tps2` env
+#   conda activate tps2
+#   pip install -e .                         # builds the Rust extension (maturin)
+#
+# (pip install -e . is also run automatically by the last line of this file's
+#  companion Dockerfile.)
+name: tps2
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  # --- build toolchain for the Rust kernels (no separate rustup needed) ---
+  - rust>=1.75
+  - maturin>=1.5,<2.0
+  - pip
+  # --- core scientific stack ---
+  - numpy>=1.24
+  - scipy>=1.11
+  - pandas
+  - scikit-learn>=1.3
+  - matplotlib>=3.7
+  # --- geospatial / data (the deps most prone to pip breakage) ---
+  - gdal
+  - rasterio>=1.3
+  - rioxarray>=0.15
+  - geopandas>=0.13
+  - xarray>=2023.0
+  - netCDF4>=1.6
+  - zarr>=2.16
+  - dask>=2023.0
+  - fsspec
+  # --- config / CLI / utilities ---
+  - pydantic>=2.0
+  - typer>=0.9
+  - rich>=13.0
+  - pyyaml>=6.0
+  - tqdm
+  - tenacity
+  - requests
+  # --- pip-only deps + the package itself ---
+  - pip:
+      - dem-stitcher
+      - -e .

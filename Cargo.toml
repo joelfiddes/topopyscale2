@@ -1,0 +1,21 @@
+[package]
+name = "topopyscale2"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "_rust_kernels"
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[features]
+# "snow": FSM1/gFSM snow-model kernels (application layer). The public core-only
+# release sets default = [] (scripts/release/transforms.py).
+default = []
+snow = []
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+numpy = "0.22"
+ndarray = "0.16"
+rayon = "1.10"

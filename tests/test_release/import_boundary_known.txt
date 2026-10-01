@@ -1,0 +1,8 @@
+# v1 import-boundary edges that exist today (#211). Each line: shipped module -> module
+# that does not ship. Fixing an edge means deleting its line (the test enforces it);
+# never add a line to silence a new edge.
+#
+# EMPTY since 2026-09-30 (#212/#213/#214 + optional forecast inputs): no module on the
+# export allowlist imports one that is not. Keep it empty. A new edge means making the
+# import lazy and optional (see topopyscale2/_optional.py), or deliberately shipping
+# the target by adding it to scripts/release/export_allowlist.txt.

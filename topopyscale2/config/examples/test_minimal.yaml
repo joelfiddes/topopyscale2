@@ -1,0 +1,69 @@
+# Minimal test configuration - small domain in Swiss Alps
+# For quick end-to-end pipeline testing
+
+domain:
+  # Small box near Zermatt (~10km x 10km)
+  bbox: [7.7, 45.95, 7.85, 46.05]
+  dem_source: glo_30
+  spatial_mode: clusters
+  crs: "EPSG:32632"
+
+clustering:
+  method: kmeans
+  features:
+    - elevation
+    - slope
+    - cos_aspect
+    - sin_aspect
+    - svf
+  n_clusters: 20
+  feature_standardization: true
+
+surface_types:
+  source: custom
+  stratify: false
+
+inputs:
+  primary: era5
+  backend: google
+  time_range: ["2020-01-15", "2020-01-16"]  # Just 2 days
+  pressure_levels: [700, 850, 1000]
+  time_resolution: "1H"
+  output_format: netcdf
+  max_workers: 4
+  cache_dir: ./test_run/inputs/
+
+downscaling:
+  temperature: lapse_rate
+  radiation: toposcale
+  wind: winstral
+  precipitation: elevation_gradient
+  humidity: standard
+  wind_config:
+    method: winstral
+    sx_search_distance_m: 300.0
+    sx_n_directions: 36
+
+output:
+  format: netcdf
+  directory: ./test_run/output/
+  variables:
+    - temperature
+    - precipitation
+    - shortwave_direct
+    - shortwave_diffuse
+    - longwave
+    - wind_speed
+    - wind_direction
+    - humidity_specific
+    - pressure
+    - rainfall
+    - snowfall
+  compression: true
+
+execution:
+  backend: local
+  n_workers: 4
+  kernel_backend: rust
+  chunks_time: monthly
+  chunks_space: 20

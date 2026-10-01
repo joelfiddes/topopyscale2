@@ -1,0 +1,34 @@
+# Wording and branding for `tps2 view` — the Davos forcing demo.
+title: One ERA5 grid cell above Davos, downscaled onto the terrain
+lede: >-
+  TopoPyScale&nbsp;2 (TPS2) takes coarse ERA5 reanalysis, about 31&nbsp;km per grid cell, and
+  downscales it onto the real terrain: every terrain unit gets its own hourly temperature,
+  precipitation and snowfall, radiation, wind and humidity. Below is water year 2024
+  (October&nbsp;2023 to July&nbsp;2024) over Davos and Weissfluhjoch, Switzerland.
+tiles:
+  - k: ERA5 input
+    v: ≈ 2000 m
+    s: smooth ground elevation in the reanalysis, at about 31 km per cell
+what:
+  - "<b>Input:</b> hourly ERA5 reanalysis, surface and pressure levels. ERA5 treats the whole area as smooth ground at about 2000–2200&nbsp;m."
+  - "<b>Terrain:</b> the Copernicus 90&nbsp;m DEM, grouped into 150 terrain units by elevation, slope, aspect and sky-view factor. Switch to “Terrain units” to see them."
+  - "<b>Temperature and humidity</b> are interpolated from the pressure levels to each unit's elevation, which is where the lapse in the elevation panel comes from."
+  - "<b>Shortwave</b> is corrected for slope, aspect, terrain shading and sky view: compare sunny south faces with shaded north faces on the Shortwave layer."
+  - "<b>Precipitation</b> is split into rain and snow by wet-bulb temperature, so the Snowfall layer changes with elevation even where total precipitation does not."
+  - "<b>The page</b> shows daily values; the run itself is hourly."
+limitations:
+  - "<b>Precipitation hardly varies between units</b> (see the tile above): TPS2's elevation gradient for precipitation is off by default, so each unit gets its grid cell's amount. What varies with elevation is how much of it falls as snow."
+  - "<b>Valley cold pools are missed.</b> Temperature follows the free atmosphere of the pressure levels, so clear-night inversions on valley floors are too warm."
+  - "<b>Wind is the grid cell's wind</b>, adjusted to each unit's height above ground. It is not a gust, and it does not channel along valleys."
+  - "<b>This is one season</b> and has no station comparison on this page. It shows what the downscaling does, not how accurate it is."
+reproduce: |
+  tps2 run  --config config.yaml       # DEM → terrain units → ERA5 → downscaling
+  tps2 view . --page page.yaml --save-daily
+credits: >-
+  Data: ERA5 reanalysis, generated using Copernicus Climate Change Service information
+  (C3S / ECMWF; neither the European Commission nor ECMWF is responsible for any use made of it).
+  Copernicus DEM GLO-90 © DLR e.V. 2010–2014 and © Airbus Defence and Space GmbH 2014–2018,
+  provided under COPERNICUS by the European Union and ESA.
+logo: branding/MF_logo_pos_rgb.svg
+logo_dark: branding/MF_logo_reverse_monoline.svg
+logo_link: https://mountainfutures.ch

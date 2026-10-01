@@ -1,0 +1,61 @@
+domain:
+  bbox: [68.0, 38.0, 78.0, 43.0]
+  dem_source: glo_90
+  spatial_mode: clusters
+  crs: "EPSG:32643"
+
+clustering:
+  method: kmeans
+  features:
+    - elevation
+    - slope
+    - cos_aspect
+    - sin_aspect
+    - svf
+  n_clusters: 200
+  feature_standardization: true
+
+surface_types:
+  source: custom
+  stratify: false
+
+inputs:
+  primary: era5
+  backend: google
+  time_range: ["2020-01-01", "2020-12-31"]
+  pressure_levels: [300, 500, 700, 850, 1000]
+  time_resolution: "1H"
+  output_format: netcdf
+  max_workers: 4
+  cache_dir: ./inputs/climate/
+
+downscaling:
+  temperature: lapse_rate
+  radiation: toposcale
+  wind: log_profile
+  precipitation: elevation_gradient
+  humidity: standard
+
+output:
+  format: netcdf
+  directory: ./output/
+  variables:
+    - temperature
+    - precipitation
+    - shortwave_direct
+    - shortwave_diffuse
+    - longwave
+    - wind_speed
+    - humidity_specific
+    - humidity_relative
+    - pressure
+    - rainfall
+    - snowfall
+  compression: true
+
+execution:
+  backend: local
+  n_workers: 4
+  kernel_backend: rust
+  chunks_time: monthly
+  chunks_space: 100

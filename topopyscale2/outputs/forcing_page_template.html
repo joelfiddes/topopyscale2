@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TPS2 Forcing Page</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #16202b; --muted: #5d6b7a; --line: #dde2e8;
+  --accent: #2b5fa8; --model: #2b5fa8; --ref: #c2410c;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141a; --panel: #171e27; --ink: #e6ebf1; --muted: #93a1b0; --line: #2a3441;
+    --accent: #7fb0ea; --model: #7fb0ea; --ref: #fb923c;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141a; --panel: #171e27; --ink: #e6ebf1; --muted: #93a1b0; --line: #2a3441;
+  --accent: #7fb0ea; --model: #7fb0ea; --ref: #fb923c;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: clamp(22px, 3.2vw, 32px); line-height: 1.2; margin: 0 0 6px; letter-spacing: -0.01em; }
+.lede { color: var(--muted); margin: 0 0 20px; max-width: 70ch; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.tile .k { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.tile .v { font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.tile .s { font-size: 13px; color: var(--muted); }
+.grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+.panel h2 { font-size: 15px; margin: 0 0 8px; }
+.panel .hint { font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+.mapbox { position: relative; width: 100%; }
+#map { width: 100%; height: auto; display: block; border-radius: 6px; cursor: crosshair; }
+.controls { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.layers { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.layers button { font-size: 13px; padding: 4px 10px; }
+button { font: inherit; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+button[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+#play { min-width: 76px; }
+input[type=range] { flex: 1; min-width: 160px; accent-color: var(--accent); }
+#date { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 104px; }
+.legend { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin-top: 8px; flex-wrap: wrap; }
+.legend canvas { height: 10px; width: 180px; border-radius: 3px; border: 1px solid var(--line); }
+#readout { font-size: 13px; color: var(--muted); min-height: 20px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+svg text { fill: var(--muted); font-size: 11px; }
+#heat { width: 100%; height: 180px; display: block; border-radius: 6px; cursor: pointer; }
+.below { margin-top: 14px; }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 14px; }
+.notes p, .notes li { font-size: 14px; }
+.notes ul { padding-left: 18px; margin: 6px 0; }
+a { color: var(--accent); }
+code { font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--bg); padding: 1px 4px; border-radius: 4px; }
+pre { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow-x: auto; font-size: 13px; }
+.topbar { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-bottom: 4px; }
+.themebtn { font-size: 13px; }
+#logoLink img { height: 40px; width: auto; display: block; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a id="logoLink" class="hidden" target="_blank" rel="noopener"><img id="logo" alt="logo"></a>
+    <button class="themebtn" id="theme" title="Toggle light / dark">◐ Theme</button>
+  </div>
+  <h1 id="title"></h1>
+  <p class="lede" id="lede"></p>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="grid">
+    <div class="panel">
+      <h2 id="mapTitle">Downscaled forcing on the terrain</h2>
+      <p class="hint">Choose a variable, press play to run through the season, hover to read a location, click to chart a terrain unit.</p>
+      <div class="layers" id="layers"></div>
+      <div class="mapbox"><canvas id="map"></canvas></div>
+      <div class="controls">
+        <button id="play">▶ Play</button>
+        <input id="slider" type="range" min="0" max="1" value="0" aria-label="Day">
+        <span id="date"></span>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div id="readout">&nbsp;</div>
+    </div>
+
+    <div class="panel">
+      <h2 id="elevTitle">By elevation</h2>
+      <p class="hint">Each dot is a terrain unit on the day shown: its value against its mean elevation. The line is a fit, weighted by unit area. Click a dot to chart that unit.</p>
+      <svg id="scatter" viewBox="0 0 520 250" width="100%" role="img" aria-label="Value against elevation"></svg>
+      <div class="below">
+        <h2 id="unitTitle">One terrain unit through the season</h2>
+        <p class="hint">Blue: the selected unit (lime on the map). Dashed: the mean over the whole area.</p>
+        <svg id="chart" viewBox="0 0 520 220" width="100%" role="img" aria-label="Season time series"></svg>
+      </div>
+      <div class="below">
+        <h2>Through the season, by elevation</h2>
+        <p class="hint">Each row is a 100&nbsp;m elevation band, and colour shows its mean. Click to jump to a day.</p>
+        <canvas id="heat"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="panel">
+      <h2>What you are looking at</h2>
+      <ul id="what"></ul>
+    </div>
+    <div class="panel" id="limitsPanel">
+      <h2>Where it goes wrong</h2>
+      <ul id="limits"></ul>
+    </div>
+    <div class="panel">
+      <h2>Provenance</h2>
+      <div id="reproduce"></div>
+      <p class="hint" id="stamp"></p>
+      <details><summary class="hint">config.yaml used for this run</summary><pre id="cfg"></pre></details>
+      <p class="hint" id="credits"></p>
+      <p class="hint">Made with TopoPyScale 2 (<code>tps2 view</code>).</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const D = /*__DATA__*/null;
+const SCHEMA_VERSION = 1;   // must match topopyscale2/outputs/forcing_page.py
+if (!D || D.schema_version !== SCHEMA_VERSION) {
+  document.body.innerHTML = `<p style="padding:24px">This page was built with forcing-page data version ${D && D.schema_version}, but its template expects version ${SCHEMA_VERSION}. Rebuild it with <code>tps2 view</code>.</p>`;
+  throw new Error("forcing page schema mismatch");
+}
+
+// ---------- decode ----------
+function b64(s, Type) {
+  const bin = atob(s), buf = new ArrayBuffer(bin.length), u8 = new Uint8Array(buf);
+  for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return new Type(buf);
+}
+const W = D.w, H = D.h, NU = D.n_units, ND = D.ndays, NODATA = D.nodata;
+const dem = b64(D.dem, Int16Array), cmap = b64(D.cmap, D.cmap_bits === 16 ? Uint16Array : Uint8Array);
+const L = {};
+for (const k of D.layer_order) { const l = D.layers[k]; L[k] = Object.assign({}, l, { v: b64(l.data, Int16Array) }); }
+const val = (k, d, u) => { const x = L[k].v[d * NU + u]; return x === -32768 ? NaN : x / L[k].scale; };
+const day0 = new Date(D.start + "T00:00:00Z");
+const dateOf = d => new Date(day0.getTime() + d * 864e5);
+const fmt = d => dateOf(d).toISOString().slice(0, 10);
+const fmtShort = dt => dt.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const nf = (x, k) => isNaN(x) ? "–" : x.toFixed(L[k].scale >= 10 ? 1 : 0);
+const area = D.unit_area;
+
+// ---------- hillshade (computed once) ----------
+const dx = D.dx, dy = D.dy;   // pixel size in metres
+const shade = new Float32Array(W * H);
+{
+  const az = 315 * Math.PI / 180, alt = 45 * Math.PI / 180;
+  const z = (x, y) => { x = Math.max(0, Math.min(W - 1, x)); y = Math.max(0, Math.min(H - 1, y)); const v = dem[y * W + x]; return v === -32768 ? 0 : v; };
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const gx = (z(x + 1, y) - z(x - 1, y)) / (2 * dx), gy = (z(x, y + 1) - z(x, y - 1)) / (2 * dy);
+    const slope = Math.atan(Math.hypot(gx, gy)), aspect = Math.atan2(gy, -gx);
+    const v = Math.sin(alt) * Math.cos(slope) + Math.cos(alt) * Math.sin(slope) * Math.cos(az - Math.PI / 2 - aspect);
+    shade[y * W + x] = Math.max(0, v);
+  }
+}
+
+// ---------- colour ramps (value normalised to 0..1 over the layer's fixed range) ----------
+const RAMPS = {
+  temp:   [[0, [49, 54, 149]], [0.3, [116, 173, 209]], [0.5, [247, 247, 247]], [0.7, [244, 165, 130]], [1, [165, 0, 38]]],
+  precip: [[0, [239, 246, 255]], [0.25, [147, 197, 253]], [0.5, [59, 130, 246]], [0.75, [30, 64, 175]], [1, [88, 28, 135]]],
+  snow:   [[0, [240, 249, 255]], [0.25, [186, 230, 253]], [0.5, [56, 189, 248]], [0.75, [3, 105, 161]], [1, [49, 46, 129]]],
+  sun:    [[0, [30, 27, 75]], [0.3, [126, 34, 206]], [0.55, [234, 88, 12]], [0.8, [250, 204, 21]], [1, [254, 249, 195]]],
+  lw:     [[0, [30, 58, 138]], [0.5, [167, 139, 250]], [1, [234, 88, 12]]],
+  wind:   [[0, [247, 252, 245]], [0.35, [161, 217, 155]], [0.7, [49, 163, 84]], [1, [0, 68, 27]]],
+  rh:     [[0, [140, 81, 10]], [0.4, [223, 194, 125]], [0.7, [199, 234, 229]], [1, [1, 102, 94]]],
+};
+// Precipitation-type layers show bare terrain below this daily amount [mm].
+const DRY = { precip: 0.1, snow: 0.1 };
+function rampColor(k, x) {
+  const l = L[k];
+  if (isNaN(x)) return null;
+  if (DRY[l.ramp] !== undefined && x < DRY[l.ramp]) return null;
+  const t = Math.max(0, Math.min(1, (x - l.lo) / (l.hi - l.lo))), st = RAMPS[l.ramp];
+  for (let i = 1; i < st.length; i++) if (t <= st[i][0]) {
+    const [a, ca] = st[i - 1], [b, cb] = st[i], f = (t - a) / (b - a);
+    return ca.map((c, j) => c + f * (cb[j] - c));
+  }
+  return st[st.length - 1][1];
+}
+const unitRGB = [...Array(NU)].map((_, i) => hsl2rgb((i * 137.508) % 360, 0.55, 0.58));
+function hsl2rgb(h, s, l) {
+  const a = s * Math.min(l, 1 - l), f = n => { const k = (n + h / 30) % 12; return 255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))); };
+  return [f(0), f(8), f(4)];
+}
+
+// ---------- state ----------
+let layer = D.layer_order[0], mode = "layer", day = 0, selUnit = 0;
+{ // start on the highest unit: the one where the downscaling departs most from the grid cell
+  let best = 0; for (let u = 0; u < NU; u++) if ((D.unit_elev[u] ?? -1e9) > (D.unit_elev[best] ?? -1e9)) best = u; selUnit = best;
+}
+
+// ---------- map ----------
+const map = document.getElementById("map");
+map.width = W; map.height = H;
+map.style.aspectRatio = `${W * dx} / ${H * dy}`;
+const mctx = map.getContext("2d");
+const img = mctx.createImageData(W, H);
+function drawMap() {
+  const px = img.data, cols = new Array(NU);
+  if (mode === "layer") for (let u = 0; u < NU; u++) cols[u] = rampColor(layer, val(layer, day, u));
+  for (let i = 0; i < W * H; i++) {
+    const s = shade[i], u = cmap[i], g = 70 + 150 * s;
+    let r = g * 0.92, gg = g * 0.9, b = g * 0.86;         // warm grey rock
+    if (u !== NODATA) {
+      const c = mode === "layer" ? cols[u] : unitRGB[u];
+      if (c) { const k = mode === "layer" ? 0.45 + 0.6 * s : 0.55 + 0.45 * s; r = Math.min(255, c[0] * k); gg = Math.min(255, c[1] * k); b = Math.min(255, c[2] * k); }
+      if (u === selUnit && mode === "layer") { r = r * 0.35 + 163 * 0.65; gg = gg * 0.35 + 230 * 0.65; b = b * 0.35 + 53 * 0.65; }   // lime: in no ramp
+    }
+    px[4 * i] = r; px[4 * i + 1] = gg; px[4 * i + 2] = b; px[4 * i + 3] = 255;
+  }
+  mctx.putImageData(img, 0, 0);
+}
+const readout = document.getElementById("readout");
+function unitAt(e) {
+  const r = map.getBoundingClientRect();
+  const x = Math.floor((e.clientX - r.left) / r.width * W), y = Math.floor((e.clientY - r.top) / r.height * H);
+  if (x < 0 || y < 0 || x >= W || y >= H) return [-1, -1];
+  return [cmap[y * W + x], y * W + x];
+}
+map.addEventListener("mousemove", e => {
+  const [u, i] = unitAt(e);
+  if (u < 0 || u === NODATA) { readout.textContent = " "; return; }
+  readout.textContent = `${dem[i]} m · terrain unit ${u} (mean ${D.unit_elev[u]} m) · ${L[layer].label.toLowerCase()} ${nf(val(layer, day, u), layer)} ${L[layer].units} on ${fmt(day)}`;
+});
+map.addEventListener("click", e => { const [u] = unitAt(e); if (u >= 0 && u !== NODATA) selectUnit(u); });
+
+function drawLegend() {
+  const lg = document.getElementById("legend"), l = L[layer];
+  lg.innerHTML = "";
+  if (mode === "units") { lg.textContent = `${NU} terrain units, each coloured differently`; return; }
+  const cv = document.createElement("canvas"); cv.width = 180; cv.height = 10;
+  const c = cv.getContext("2d");
+  for (let x = 0; x < 180; x++) { const col = rampColor(layer, l.lo + x / 179 * (l.hi - l.lo)) || [160, 150, 140]; c.fillStyle = `rgb(${col.map(Math.round)})`; c.fillRect(x, 0, 1, 10); }
+  lg.append(`${l.lo} ${l.units}`, cv, `${l.hi} ${l.units}`, DRY[l.ramp] !== undefined ? "  ·  grey = dry" : "");
+}
+
+// ---------- layer buttons ----------
+const layersEl = document.getElementById("layers");
+const SHORT = { t_mean: "Temperature", precip: "Precipitation", snowfall: "Snowfall", sw: "Shortwave", lw: "Longwave", wind: "Wind", rh: "Humidity" };
+[...D.layer_order.map(k => [k, SHORT[k] || k]), ["__units", "Terrain units"]].forEach(([k, label]) => {
+  const b = document.createElement("button"); b.textContent = label; b.dataset.k = k;
+  b.addEventListener("click", () => setLayer(k)); layersEl.appendChild(b);
+});
+function setLayer(k) {
+  if (k === "__units") mode = "units"; else { mode = "layer"; layer = k; }
+  layersEl.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.k === (mode === "units" ? "__units" : layer)));
+  document.getElementById("elevTitle").textContent = `${L[layer].label} by elevation`;
+  drawLegend(); drawMap(); drawScatter(); drawChart(); computeHeat(); drawHeat();
+}
+
+// ---------- time controls ----------
+const slider = document.getElementById("slider"), dateEl = document.getElementById("date"), playBtn = document.getElementById("play");
+slider.max = ND - 1;
+let timer = null;
+function setDay(d) { day = d; slider.value = d; dateEl.textContent = fmtShort(dateOf(d)) + " " + dateOf(d).getUTCFullYear(); drawMap(); drawScatter(); drawCursor(); }
+slider.addEventListener("input", () => setDay(+slider.value));
+playBtn.addEventListener("click", () => {
+  if (timer) { clearInterval(timer); timer = null; playBtn.textContent = "▶ Play"; return; }
+  if (day >= ND - 1) setDay(0);
+  playBtn.textContent = "❚❚ Pause";
+  timer = setInterval(() => { if (day >= ND - 1) { playBtn.click(); return; } setDay(day + 1); }, 80);
+});
+
+// ---------- value against elevation ----------
+const scatter = document.getElementById("scatter");
+const SW = 520, SH = 250, SL = 46, SR = 12, ST = 14, SB = 30;
+const zs = D.unit_elev.filter(z => z != null), ZMIN = Math.floor(Math.min(...zs) / 250) * 250, ZMAX = Math.ceil(Math.max(...zs) / 250) * 250;
+function fit(k, d) {   // area-weighted least squares of value on elevation
+  let sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
+  for (let u = 0; u < NU; u++) {
+    const z = D.unit_elev[u], v = val(k, d, u), w = area[u];
+    if (z == null || isNaN(v) || !w) continue;
+    sw += w; sx += w * z; sy += w * v; sxx += w * z * z; sxy += w * z * v;
+  }
+  const b = (sw * sxy - sx * sy) / (sw * sxx - sx * sx), a = (sy - b * sx) / sw;
+  return isFinite(b) ? [a, b] : null;
+}
+function drawScatter() {
+  const l = L[layer], vs = [...Array(NU)].map((_, u) => val(layer, day, u)).filter(v => !isNaN(v));
+  let lo = Math.min(l.lo, ...vs), hi = Math.max(l.hi, ...vs);
+  if (l.ramp === "precip" || l.ramp === "snow") { lo = 0; hi = Math.max(5, ...vs) * 1.05; }
+  const X = v => SL + (v - lo) / (hi - lo) * (SW - SL - SR), Y = z => SH - SB - (z - ZMIN) / (ZMAX - ZMIN) * (SH - ST - SB);
+  let h = "";
+  for (let z = ZMIN; z <= ZMAX; z += 250) h += `<line x1="${SL}" x2="${SW - SR}" y1="${Y(z)}" y2="${Y(z)}" stroke="${css("--line")}"/><text x="${SL - 6}" y="${Y(z) + 4}" text-anchor="end">${z} m</text>`;
+  const step = niceStep((hi - lo) / 5);
+  for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) h += `<text x="${X(v)}" y="${SH - 12}" text-anchor="middle">${+v.toFixed(2)}</text>`;
+  h += `<text x="${SW - SR}" y="${SH - 1}" text-anchor="end">${l.units}</text>`;
+  if (l.ramp === "temp") h += `<line x1="${X(0)}" x2="${X(0)}" y1="${ST}" y2="${SH - SB}" stroke="${css("--muted")}" stroke-dasharray="2 3"/>`;
+  for (let u = 0; u < NU; u++) {
+    const z = D.unit_elev[u], v = val(layer, day, u); if (z == null || isNaN(v)) continue;
+    const c = rampColor(layer, v) || [150, 140, 130], rad = 2 + Math.sqrt(area[u] / Math.max(...area)) * 5;
+    h += `<circle data-u="${u}" cx="${X(v).toFixed(1)}" cy="${Y(z).toFixed(1)}" r="${rad.toFixed(1)}" fill="rgb(${c.map(Math.round)})" stroke="${u === selUnit ? css("--ref") : css("--muted")}" stroke-width="${u === selUnit ? 2.5 : 0.6}" style="cursor:pointer"><title>unit ${u} · ${z} m · ${nf(v, layer)} ${l.units}</title></circle>`;
+  }
+  const f = fit(layer, day);
+  if (f) {
+    const [a, b] = f, v1 = a + b * ZMIN, v2 = a + b * ZMAX;
+    h += `<line x1="${X(v1)}" y1="${Y(ZMIN)}" x2="${X(v2)}" y2="${Y(ZMAX)}" stroke="${css("--ink")}" stroke-width="1.5"/>`;
+    h += `<text x="${SW - SR}" y="${ST + 4}" text-anchor="end">${(b * 1000 >= 0 ? "+" : "") + (b * 1000).toFixed(l.scale >= 10 ? 1 : 0)} ${l.units} per km · ${fmt(day)}</text>`;
+  }
+  scatter.innerHTML = h;
+  scatter.querySelectorAll("circle").forEach(c => c.addEventListener("click", () => selectUnit(+c.dataset.u)));
+}
+function niceStep(x) { const p = Math.pow(10, Math.floor(Math.log10(x))), m = x / p; return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p; }
+
+// ---------- one unit through the season ----------
+const chart = document.getElementById("chart");
+const CW = 520, CH = 220, PL = 46, PR = 10, PT = 12, PB = 26;
+let cursorLine = null;
+function selectUnit(u) { selUnit = u; drawMap(); drawScatter(); drawChart(); }
+function drawChart() {
+  const l = L[layer], s = [...Array(ND)].map((_, d) => val(layer, d, selUnit));
+  const tot = area.reduce((a, b) => a + b, 0);
+  const m = [...Array(ND)].map((_, d) => { let a = 0; for (let u = 0; u < NU; u++) { const v = val(layer, d, u); if (!isNaN(v)) a += area[u] * v; } return a / tot; });
+  const all = s.concat(m).filter(v => !isNaN(v));
+  let lo = Math.min(...all), hi = Math.max(...all); if (hi - lo < 1e-6) hi = lo + 1;
+  const step = niceStep((hi - lo) / 4); lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+  const X = d => PL + d / (ND - 1) * (CW - PL - PR), Y = v => CH - PB - (v - lo) / (hi - lo) * (CH - PT - PB);
+  let h = "";
+  for (let v = lo; v <= hi + 1e-9; v += step) h += `<line x1="${PL}" x2="${CW - PR}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css("--line")}"/><text x="${PL - 6}" y="${Y(v) + 4}" text-anchor="end">${+v.toFixed(2)}</text>`;
+  for (let d = 0; d < ND; d++) { const dt = dateOf(d); if (dt.getUTCDate() === 1) h += `<text x="${X(d)}" y="${CH - 8}" text-anchor="middle">${dt.toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" })}</text>`; }
+  const path = arr => arr.map((v, d) => isNaN(v) ? "" : (d && !isNaN(arr[d - 1]) ? "L" : "M") + X(d).toFixed(1) + "," + Y(v).toFixed(1)).join("");
+  h += `<path d="${path(m)}" stroke="${css("--muted")}" stroke-width="1.2" stroke-dasharray="4 3" fill="none"/>`;
+  h += `<path d="${path(s)}" stroke="${css("--model")}" stroke-width="1.8" fill="none"/>`;
+  h += `<line id="cursor" x1="${X(day)}" x2="${X(day)}" y1="${PT}" y2="${CH - PB}" stroke="${css("--muted")}" stroke-dasharray="3 3"/>`;
+  h += `<text x="${CW - PR}" y="${PT + 8}" text-anchor="end">unit ${selUnit} · ${D.unit_elev[selUnit]} m · ${l.units}</text>`;
+  chart.innerHTML = h;
+  cursorLine = chart.querySelector("#cursor");
+  document.getElementById("unitTitle").textContent = `Terrain unit ${selUnit} (${D.unit_elev[selUnit]} m) through the season`;
+}
+function drawCursor() {
+  if (cursorLine) { const x = PL + day / (ND - 1) * (CW - PL - PR); cursorLine.setAttribute("x1", x); cursorLine.setAttribute("x2", x); }
+  drawHeatCursor();
+}
+
+// ---------- elevation × time heatmap ----------
+const heat = document.getElementById("heat");
+const B0 = Math.floor(D.dem_min / 100) * 100, NB = Math.ceil((D.dem_max - B0) / 100);
+const bandUnit = [...Array(NB)].map(() => new Float64Array(NU)), bandN = new Float64Array(NB);
+for (let i = 0; i < W * H; i++) {
+  const u = cmap[i]; if (u === NODATA || dem[i] === -32768) continue;
+  const b = Math.min(NB - 1, Math.floor((dem[i] - B0) / 100)); bandUnit[b][u]++; bandN[b]++;
+}
+let bandV = null, heatBase = null;
+function computeHeat() {
+  bandV = new Float32Array(NB * ND);
+  for (let d = 0; d < ND; d++) for (let b = 0; b < NB; b++) {
+    if (!bandN[b]) continue; let s = 0; for (let u = 0; u < NU; u++) if (bandUnit[b][u]) s += bandUnit[b][u] * val(layer, d, u);
+    bandV[b * ND + d] = s / bandN[b];
+  }
+}
+function drawHeat() {
+  const dpr = window.devicePixelRatio || 1, cw = heat.clientWidth, ch = heat.clientHeight;
+  heat.width = cw * dpr; heat.height = ch * dpr;
+  const c = heat.getContext("2d"); c.scale(dpr, dpr);
+  const HL = 46, HR = 6, HT = 4, HB = 18, pw = (cw - HL - HR) / ND, ph = (ch - HT - HB) / NB;
+  c.fillStyle = css("--bg"); c.fillRect(0, 0, cw, ch);
+  for (let b = 0; b < NB; b++) {
+    if (!bandN[b]) continue;
+    for (let d = 0; d < ND; d++) {
+      const col = rampColor(layer, bandV[b * ND + d]);
+      c.fillStyle = col ? `rgb(${col.map(Math.round)})` : "#a39a8c";
+      c.fillRect(HL + d * pw, HT + (NB - 1 - b) * ph, pw + 0.6, ph + 0.6);
+    }
+  }
+  c.fillStyle = css("--muted"); c.font = "11px system-ui, sans-serif"; c.textAlign = "right";
+  for (let b = 0; b < NB; b += 5) c.fillText(`${B0 + b * 100} m`, HL - 4, HT + (NB - b - 0.5) * ph + 4);
+  c.textAlign = "center";
+  for (let d = 0; d < ND; d++) if (dateOf(d).getUTCDate() === 1) c.fillText(dateOf(d).toLocaleDateString("en-GB", { month: "short", timeZone: "UTC" }), HL + d * pw, ch - 4);
+  heatBase = { img: c.getImageData(0, 0, heat.width, heat.height), HL, pw, HT, ch, HB, dpr };
+  drawHeatCursor();
+}
+function drawHeatCursor() {
+  if (!heatBase) return;
+  const c = heat.getContext("2d"), { img, HL, pw, HT, ch, HB, dpr } = heatBase;
+  c.putImageData(img, 0, 0);
+  // Set the transform absolutely: drawHeat leaves the context scaled by dpr, and scaling
+  // again here would put the cursor at dpr × x on high-density screens.
+  c.setTransform(dpr, 0, 0, dpr, 0, 0); c.strokeStyle = css("--ink"); c.lineWidth = 1.5;
+  const x = HL + (day + 0.5) * pw; c.beginPath(); c.moveTo(x, HT); c.lineTo(x, ch - HB); c.stroke();
+}
+heat.addEventListener("click", e => {
+  const r = heat.getBoundingClientRect(), { HL, pw } = heatBase;
+  const d = Math.round((e.clientX - r.left - HL) / pw); if (d >= 0 && d < ND) setDay(d);
+});
+window.addEventListener("resize", drawHeat);
+
+// ---------- page text, tiles, provenance ----------
+const P = D.page;
+document.title = P.title;
+document.getElementById("title").textContent = P.title;
+document.getElementById("lede").innerHTML = P.lede;
+document.getElementById("what").innerHTML = P.what.map(x => `<li>${x}</li>`).join("");
+if (P.limitations.length) document.getElementById("limits").innerHTML = P.limitations.map(x => `<li>${x}</li>`).join("");
+else document.getElementById("limitsPanel").classList.add("hidden");
+document.getElementById("reproduce").innerHTML = P.reproduce ? `<pre>${P.reproduce.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</pre>` : "";
+document.getElementById("credits").innerHTML = P.credits;
+const logoLink = document.getElementById("logoLink"), logoImg = document.getElementById("logo");
+function setLogo() {
+  if (!P.logo) return;
+  const root = document.documentElement, dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  logoImg.src = dark ? P.logo_dark : P.logo;
+}
+if (P.logo) { logoLink.classList.remove("hidden"); if (P.logo_link) logoLink.href = P.logo_link; setLogo(); }
+{
+  // season means per unit, then the spread across units: what the downscaling adds
+  const seasonMean = k => [...Array(NU)].map((_, u) => { let s = 0, n = 0; for (let d = 0; d < ND; d++) { const v = val(k, d, u); if (!isNaN(v)) { s += v; n++; } } return n ? s / n : NaN; });
+  const tiles = [...(P.tiles || []).map(t => [t.k, t.v, t.s || ""]), ["Period", `${fmtShort(dateOf(0))} ${dateOf(0).getUTCFullYear()} – ${fmtShort(dateOf(ND - 1))} ${dateOf(ND - 1).getUTCFullYear()}`, `${ND} days, hourly forcing shown as daily values`],
+                 ["Terrain", `${D.dem_min}–${D.dem_max} m`, `${NU} terrain units, each downscaled separately`]];
+  if (L.t_mean) {
+    const tm = seasonMean("t_mean"); let sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
+    for (let u = 0; u < NU; u++) { const z = D.unit_elev[u], v = tm[u], w = area[u]; if (z == null || isNaN(v) || !w) continue; sw += w; sx += w * z; sy += w * v; sxx += w * z * z; sxy += w * z * v; }
+    const b = (sw * sxy - sx * sy) / (sw * sxx - sx * sx);
+    if (isFinite(b)) tiles.push(["Temperature lapse", `${(b * 1000).toFixed(1)} °C/km`, "season-mean temperature against unit elevation"]);
+  }
+  if (L.precip) {
+    const pt = [...Array(NU)].map((_, u) => { let s = 0; for (let d = 0; d < ND; d++) { const v = val("precip", d, u); if (!isNaN(v)) s += v; } return s; });
+    tiles.push(["Precipitation, season total", `${Math.round(Math.min(...pt))}–${Math.round(Math.max(...pt))} mm`, "driest to wettest terrain unit"]);
+  }
+  if (L.sw) {
+    const sm = seasonMean("sw").filter(v => !isNaN(v));
+    tiles.push(["Shortwave, season mean", `${Math.round(Math.min(...sm))}–${Math.round(Math.max(...sm))} W m⁻²`, "most shaded to sunniest terrain unit"]);
+  }
+  document.getElementById("tiles").innerHTML = tiles.map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+}
+document.getElementById("stamp").innerHTML = `Produced by TPS2 <code>${D.stamp.engine}</code>, run ${D.stamp.run_date}.`;
+document.getElementById("cfg").textContent = D.stamp.config || "(no config.yaml found in the simulation directory)";
+
+// ---------- theme ----------
+document.getElementById("theme").addEventListener("click", () => {
+  const root = document.documentElement, dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark"; drawScatter(); drawChart(); drawHeat(); setLogo();
+});
+
+// ---------- start: temperature, on the day the freezing level splits the area ----------
+// (half the area above 0 °C, half below: the day the downscaled lapse is easiest to see)
+{
+  let best = 0, bd = Infinity;
+  const tot = area.reduce((a, b) => a + b, 0);
+  if (L.t_mean) for (let d = 0; d < ND; d++) {
+    let below = 0; for (let u = 0; u < NU; u++) if (val("t_mean", d, u) < 0) below += area[u];
+    const dist = Math.abs(below / tot - 0.5); if (dist < bd) { bd = dist; best = d; }
+  }
+  setLayer(D.layer_order[0]);
+  setDay(best);
+}
+</script>
+</body>
+</html>

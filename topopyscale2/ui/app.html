@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TPS2 Run Setup</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root { --bg: #f6f7f9; --panel: #fff; --ink: #16202b; --muted: #5d6b7a; --line: #dde2e8; --accent: #2b5fa8; --bad: #b91c1c; --good: #15803d; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141a; --panel: #171e27; --ink: #e6ebf1; --muted: #93a1b0; --line: #2a3441; --accent: #7fb0ea; --bad: #f87171; --good: #4ade80; } }
+:root[data-theme="dark"] { --bg: #0f141a; --panel: #171e27; --ink: #e6ebf1; --muted: #93a1b0; --line: #2a3441; --accent: #7fb0ea; --bad: #f87171; --good: #4ade80; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 48px; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+.topbar img { height: 40px; display: block; }
+h1 { font-size: clamp(22px, 3vw, 30px); margin: 0 0 4px; }
+.lede { color: var(--muted); margin: 0 0 16px; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+.panel h2 { font-size: 15px; margin: 0 0 8px; }
+.hint { font-size: 13px; color: var(--muted); margin: 0 0 10px; }
+#map { height: 380px; border-radius: 6px; border: 1px solid var(--line); }
+#mapNote { font-size: 13px; color: var(--muted); margin-top: 6px; }
+label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 3px; }
+input, select { font: inherit; width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--ink); }
+.row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+button { font: inherit; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+button:disabled { opacity: .5; cursor: default; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+#msg { margin-top: 10px; font-size: 14px; min-height: 22px; }
+#msg.bad { color: var(--bad); } #msg.good { color: var(--good); }
+pre#log { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; height: 320px; overflow: auto; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap; margin: 0; }
+code { font: 13px ui-monospace, Menlo, Consolas, monospace; background: var(--bg); padding: 1px 4px; border-radius: 4px; }
+.dsgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 900px) { .dsgrid { grid-template-columns: 1fr; } }
+input:disabled, select:disabled { opacity: .45; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a href="https://mountainfutures.ch" target="_blank" rel="noopener"><img src="/logo.svg" alt="Mountain Futures"></a>
+    <button id="theme">◐ Theme</button>
+  </div>
+  <h1>Set up and run a downscaling</h1>
+  <p class="lede">Simulation directory <code id="simdir"></code>. Choose an area and a period, write the configuration, run, then view the result.</p>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>1 · Area</h2>
+      <p class="hint">Click two opposite corners on the map, or type the bounding box in degrees.</p>
+      <div id="map"></div>
+      <div id="mapNote"></div>
+      <div class="row">
+        <div><label for="w">West</label><input id="w" type="number" step="0.001"></div>
+        <div><label for="s">South</label><input id="s" type="number" step="0.001"></div>
+        <div><label for="e">East</label><input id="e" type="number" step="0.001"></div>
+        <div><label for="n">North</label><input id="n" type="number" step="0.001"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>2 · Period and options</h2>
+      <div class="row2">
+        <div><label for="t0">Start</label><input id="t0" type="date"></div>
+        <div><label for="t1">End</label><input id="t1" type="date"></div>
+      </div>
+      <div class="row2">
+        <div><label for="dem">DEM</label>
+          <select id="dem"><option value="glo_90">Copernicus 90 m</option><option value="glo_30">Copernicus 30 m</option></select></div>
+        <div><label for="nc">Terrain units</label><input id="nc" type="number" min="2" max="5000" step="1"></div>
+      </div>
+      <label for="fmt">Output</label>
+      <select id="fmt"><option value="netcdf">NetCDF</option><option value="zarr">Zarr</option></select>
+      <label for="backend">ERA5 source</label>
+      <select id="backend">
+        <option value="google">Google ARCO-ERA5 (no account)</option>
+        <option value="cds">Copernicus CDS (needs an API key)</option>
+        <option value="local">A local ERA5 Zarr store</option>
+      </select>
+      <div id="cacheBox" class="hidden"><label for="cache">Path of the local ERA5 Zarr store</label><input id="cache" type="text"></div>
+      <p class="hint" style="margin-top:12px">Not set here: <span id="notInForm"></span>. Edit <code>config.yaml</code> for those; this page keeps them.</p>
+      <div class="actions">
+        <button id="save">Write config.yaml</button>
+        <button id="run" class="primary">Run</button>
+        <button id="view" disabled>View the result</button>
+      </div>
+      <div id="msg"></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:14px">
+    <h2>3 · Downscaling</h2>
+    <p class="hint">How ERA5 is moved onto each terrain unit. The defaults are what the documentation and the demo use. See <code>docs/downscaling_algorithms.md</code> and the configuration reference for the physics.</p>
+    <div class="dsgrid">
+      <div>
+        <label for="mode">Temperature, humidity, wind</label>
+        <select id="mode"><option value="full">full: from the ERA5 pressure levels at each unit's elevation</option><option value="simple">simple: surface fields with a fixed lapse rate</option></select>
+        <label for="levels">Pressure levels (hPa), full mode: must bracket the terrain</label>
+        <input id="levels" type="text" placeholder="300, 500, 700, 850, 1000">
+        <label for="lapse">Lapse rate (°C per km), simple mode</label>
+        <input id="lapse" type="number" step="0.1" min="-20" max="20">
+      </div>
+      <div>
+        <label for="precip">Precipitation amount</label>
+        <select id="precip"><option value="none">ERA5's amount for every unit (default)</option><option value="elevation_gradient">scaled with elevation (gradient below)</option></select>
+        <label for="pgrad">Precipitation gradient (% per 100 m)</label>
+        <input id="pgrad" type="number" step="0.5" min="0" max="20">
+        <label for="wind">Wind</label>
+        <select id="wind"><option value="log_profile">log profile to each unit's height</option><option value="winstral">log profile + terrain exposure (Winstral Sx)</option></select>
+      </div>
+      <div>
+        <label for="phase">Rain or snow, decided by</label>
+        <select id="phase"><option value="wet_bulb">wet-bulb temperature (default)</option><option value="air_temperature">air temperature</option></select>
+        <div class="row2">
+          <div><label for="tsnow">All snow below (°C)</label><input id="tsnow" type="number" step="0.1"></div>
+          <div><label for="train">All rain above (°C)</label><input id="train" type="number" step="0.1"></div>
+        </div>
+        <label for="tairmax">Always rain above this air temperature (°C)</label>
+        <input id="tairmax" type="number" step="0.5">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:14px">
+    <h2>4 · Run log</h2>
+    <p class="hint"><code>tps2 run</code> in the simulation directory: terrain units, ERA5, then downscaling. The log is also written to <code>ui_run.log</code>.</p>
+    <pre id="log"></pre>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const TOKEN = "__TOKEN__";
+const $ = id => document.getElementById(id);
+const msg = (t, cls) => { $("msg").textContent = t; $("msg").className = cls || ""; };
+
+async function api(path, body) {
+  const r = await fetch(path, body === undefined ? {} : {
+    method: "POST", headers: { "Content-Type": "application/json", "X-TPS2-Token": TOKEN }, body: JSON.stringify(body) });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+// ---------- map ----------
+let map = null, rect = null, firstCorner = null;
+function bbox() { return ["w", "s", "e", "n"].map(k => parseFloat($(k).value)); }
+function drawRect() {
+  if (!map) return;
+  const [w, s, e, n] = bbox();
+  if ([w, s, e, n].some(isNaN)) return;
+  const b = [[s, w], [n, e]];
+  if (rect) rect.setBounds(b); else rect = L.rectangle(b, { color: "#2b5fa8", weight: 2 }).addTo(map);
+}
+if (window.L) {
+  map = L.map("map").setView([46.8, 9.8], 9);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    { maxZoom: 16, attribution: "© OpenStreetMap contributors" }).addTo(map);
+  map.on("click", ev => {
+    const { lat, lng } = ev.latlng;
+    if (!firstCorner) { firstCorner = [lat, lng]; $("mapNote").textContent = "Now click the opposite corner."; return; }
+    const [a, b] = [firstCorner, [lat, lng]]; firstCorner = null;
+    $("w").value = Math.min(a[1], b[1]).toFixed(3); $("e").value = Math.max(a[1], b[1]).toFixed(3);
+    $("s").value = Math.min(a[0], b[0]).toFixed(3); $("n").value = Math.max(a[0], b[0]).toFixed(3);
+    $("mapNote").textContent = ""; drawRect();
+  });
+} else {
+  $("map").classList.add("hidden");
+  $("mapNote").textContent = "The map needs a network connection; type the bounding box instead.";
+}
+["w", "s", "e", "n"].forEach(k => $(k).addEventListener("change", drawRect));
+// Inputs that do nothing for the current choices are disabled, so the page never implies otherwise.
+function syncEnabled() {
+  $("lapse").disabled = $("mode").value !== "simple";
+  $("levels").disabled = $("mode").value !== "full";
+  $("pgrad").disabled = $("precip").value !== "elevation_gradient";
+}
+["mode", "precip"].forEach(k => $(k).addEventListener("change", syncEnabled));
+$("backend").addEventListener("change", () => $("cacheBox").classList.toggle("hidden", $("backend").value !== "local"));
+
+// ---------- form <-> config ----------
+function form() {
+  return {
+    "domain.bbox": bbox(), "domain.dem_source": $("dem").value,
+    "inputs.time_range": [$("t0").value, $("t1").value], "inputs.backend": $("backend").value,
+    "inputs.cache_path": $("cache").value, "clustering.n_clusters": $("nc").value,
+    "downscaling.mode": $("mode").value, "output.format": $("fmt").value,
+    "inputs.pressure_levels": $("levels").value,
+    "downscaling.lapse_rate": $("lapse").value === "" ? "" : parseFloat($("lapse").value) / 1000,
+    "downscaling.precipitation": $("precip").value,
+    "downscaling.precip_gradient": $("pgrad").value === "" ? "" : parseFloat($("pgrad").value) / 10000,
+    "downscaling.phase_method": $("phase").value,
+    "downscaling.t_snow_threshold_c": $("tsnow").value, "downscaling.t_rain_threshold_c": $("train").value,
+    "downscaling.t_air_max_c": $("tairmax").value,
+    "downscaling.wind_config.method": $("wind").value,
+  };
+}
+function setSelect(id, v) { if ([...$(id).options].some(o => o.value === v)) $(id).value = v; }
+async function load() {
+  const st = await api("/api/state");
+  $("simdir").textContent = st.sim_dir;
+  $("notInForm").textContent = st.not_in_form;
+  const v = st.values, bb = v["domain.bbox"] || [9.70, 46.72, 9.98, 46.88];
+  ["w", "s", "e", "n"].forEach((k, i) => $(k).value = bb[i]);
+  const tr = v["inputs.time_range"] || ["2023-10-01", "2023-10-31"];
+  $("t0").value = String(tr[0]).slice(0, 10); $("t1").value = String(tr[1]).slice(0, 10);
+  setSelect("dem", v["domain.dem_source"]); setSelect("mode", v["downscaling.mode"] || "full");
+  setSelect("fmt", v["output.format"] === "zarr" ? "zarr" : "netcdf");
+  setSelect("backend", v["inputs.backend"] || "google");
+  $("cache").value = v["inputs.cache_path"] || ""; $("backend").dispatchEvent(new Event("change"));
+  $("nc").value = v["clustering.n_clusters"] || 50;
+  const num = (x, d) => (x === null || x === undefined || x === "") ? d : x;
+  $("levels").value = (v["inputs.pressure_levels"] || [300, 500, 700, 850, 1000]).join(", ");
+  $("lapse").value = +(num(v["downscaling.lapse_rate"], 0.0065) * 1000).toFixed(2);
+  setSelect("precip", v["downscaling.precipitation"] || "none");
+  $("pgrad").value = +(num(v["downscaling.precip_gradient"], 0.0003) * 10000).toFixed(2);
+  setSelect("phase", v["downscaling.phase_method"] || "wet_bulb");
+  $("tsnow").value = num(v["downscaling.t_snow_threshold_c"], -0.5);
+  $("train").value = num(v["downscaling.t_rain_threshold_c"], 2.5);
+  $("tairmax").value = num(v["downscaling.t_air_max_c"], 4.0);
+  setSelect("wind", v["downscaling.wind_config.method"] || "log_profile");
+  syncEnabled();
+  if (map) { drawRect(); if (rect) map.fitBounds(rect.getBounds(), { padding: [30, 30] }); }
+  $("view").disabled = !st.forcing;
+  if (st.running) { $("run").disabled = true; poll(); }
+  msg(st.config_exists ? "Loaded the existing config.yaml." : "No config.yaml yet: these are the starting values.");
+}
+
+$("save").addEventListener("click", async () => {
+  try { const r = await api("/api/config", form()); msg(`Written: ${r.written}`, "good"); }
+  catch (e) { msg(e.message, "bad"); }
+});
+$("run").addEventListener("click", async () => {
+  try {
+    await api("/api/config", form());
+    await api("/api/run", {});
+    $("run").disabled = true; $("view").disabled = true; $("log").textContent = ""; logOffset = 0;
+    msg("Running…"); poll();
+  } catch (e) { msg(e.message, "bad"); }
+});
+$("view").addEventListener("click", () => window.open("/view", "_blank", "noopener"));
+
+// ---------- log ----------
+let logOffset = 0;
+async function poll() {
+  try {
+    const r = await fetch(`/api/log?offset=${logOffset}`).then(x => x.json());
+    if (r.text) { const el = $("log"); el.textContent += r.text; el.scrollTop = el.scrollHeight; }
+    logOffset = r.offset;
+    if (r.running) { setTimeout(poll, 1000); return; }
+    $("run").disabled = false;
+    if (r.returncode === 0) { msg("Run finished.", "good"); $("view").disabled = false; }
+    else if (r.returncode !== null) msg(`Run failed (exit ${r.returncode}); see the log.`, "bad");
+  } catch (e) { setTimeout(poll, 2000); }
+}
+
+$("theme").addEventListener("click", () => {
+  const root = document.documentElement, dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+});
+load().catch(e => msg(e.message, "bad"));
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+/* Mountain Futures palette, shared with the operating manual site. */
+:root {
+  --md-primary-fg-color:        #3c6f30;
+  --md-primary-fg-color--light: #4f8f3f;
+  --md-primary-fg-color--dark:  #2c5423;
+  --md-accent-fg-color:         #2f6d94;
+}
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color:        #4f8f3f;
+  --md-accent-fg-color:         #5aa0cf;
+}
+.md-header__button.md-logo img { height: 1.6rem; width: auto; }
+.md-typeset table:not([class]) { font-size: 0.72rem; }

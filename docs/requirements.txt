@@ -1,0 +1,7 @@
+# Docs build only. Deliberately does not install topopyscale2: reference pages
+# are generated and committed (scripts/docs/gen_reference.py), and the API page
+# is read statically by mkdocstrings, so no Rust or GDAL is needed to build.
+mkdocs==1.6.1
+mkdocs-material==9.7.7
+mkdocstrings==1.0.6
+mkdocstrings-python==2.0.8
