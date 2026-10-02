@@ -40,6 +40,9 @@ jobs:
         shell: bash
         run: |
           python -m pip install --find-links dist --only-binary topopyscale2 topopyscale2
+          # Import from outside the checkout: inside it, ./topopyscale2 (the source, with no
+          # compiled kernels) shadows the installed wheel.
+          cd "$RUNNER_TEMP"
           python -c "import topopyscale2.core._rust_kernels; from topopyscale2.core.dispatch import available_backends; b = available_backends(); print(b); assert 'rust' in b"
       - uses: actions/upload-artifact@v4
         with:
