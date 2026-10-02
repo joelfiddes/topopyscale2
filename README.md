@@ -106,7 +106,8 @@ merged**. Bug reports, feature requests and questions are very welcome as
 
 ## Citing TPS2
 
-TPS2 is developed by Joel Fiddes, [Mountain Futures](https://mountainfutures.ch). If you use it
+TPS2 is developed by Joel Fiddes, [Mountain Futures](https://mountainfutures.ch), and Simon
+Filhol, Météo-France. If you use it
 in research, please cite it using [`CITATION.cff`](CITATION.cff) (GitHub's "Cite this
 repository" button), and for research that builds substantially on TPS2, please consider
 getting in touch about co-authorship.

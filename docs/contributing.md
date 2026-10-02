@@ -27,6 +27,6 @@ notes.
 ## Citing and co-authorship
 
 TPS2 is open source under the MIT licence, developed by Joel Fiddes at
-[Mountain Futures](https://mountainfutures.ch). If you use it in published work, please cite
+[Mountain Futures](https://mountainfutures.ch) and Simon Filhol at Météo-France. If you use it in published work, please cite
 it (`CITATION.cff` in the repository). If TPS2 is central to your work, consider getting in
 touch about co-authorship or collaboration.

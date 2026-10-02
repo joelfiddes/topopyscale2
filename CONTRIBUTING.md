@@ -21,6 +21,7 @@ before you submit.
 **Have a fix?** Describe it in the issue, with a patch or a snippet if that is clearest. It is
 applied in the development repository and credited in the release notes.
 
-TPS2 is MIT-licensed and developed by Joel Fiddes, [Mountain Futures](https://mountainfutures.ch).
+TPS2 is MIT-licensed and developed by Joel Fiddes, [Mountain Futures](https://mountainfutures.ch),
+and Simon Filhol, Météo-France.
 If you use it in research, please cite it ([`CITATION.cff`](CITATION.cff)); if TPS2 is central
 to your work, consider getting in touch about co-authorship.

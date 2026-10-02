@@ -11,6 +11,7 @@ license = "MIT"
 requires-python = ">=3.11"
 authors = [
     { name = "Joel Fiddes" },
+    { name = "Simon Filhol" },
 ]
 keywords = ["downscaling", "meteorology", "topography", "ERA5", "mountain"]
 classifiers = [

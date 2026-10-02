@@ -2,13 +2,16 @@ cff-version: 1.2.0
 title: "TopoPyScale 2 (TPS2): topographic downscaling of meteorological forcing"
 message: >-
   If you use TPS2 in research, please cite it as below. TPS2 is developed by
-  Joel Fiddes (Mountain Futures); for research that builds substantially on it,
+  Joel Fiddes (Mountain Futures) and Simon Filhol (Météo-France); for research that builds substantially on it,
   please consider reaching out about co-authorship.
 type: software
 authors:
   - given-names: Joel
     family-names: Fiddes
     affiliation: Mountain Futures
+  - given-names: Simon
+    family-names: Filhol
+    affiliation: Météo-France
 license: MIT
 repository-code: "https://github.com/joelfiddes/topopyscale2"
 version: 0.1.0
