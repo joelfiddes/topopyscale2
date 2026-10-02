@@ -9,6 +9,18 @@ to support without the people who wrote them in the room.
 There are no dates here on purpose. To ask for something, or to say which of these matters
 most to you, open an issue (see [Contributing](contributing.md)).
 
+## See them in operation
+
+Several of the features below already run every day in operational systems built on the
+same engine:
+
+- **[Snow forecasting for Central Asia](https://apps.mountainfutures.ch/ca-forecast/)**:
+  the daily cycle from start to finish. ERA5 and ECMWF forecasts are downscaled onto the
+  mountains of Central Asia, the FSM snow model runs on every terrain unit, and the results are
+  published as maps and forecasts of snow depth and snow water equivalent, compared against
+  the long-term climatology. It shows the snow model, forecasts and dashboards from this
+  roadmap working together.
+
 ## Models driven by the forcing
 
 - **Snow model (FSM).** The Factorial Snow Model run on every terrain unit: snow depth, SWE,
