@@ -52,7 +52,7 @@ TPS2 is a ground-up rewrite of [TopoPyScale](https://github.com/ArcticSnow/TopoP
 
 -   **What comes next**
 
-    Snow and glacier models, station validation, data assimilation, climate scenarios.
+    Snow models, station validation, data assimilation, climate scenarios.
 
     [:octicons-arrow-right-24: Roadmap](roadmap.md)
 

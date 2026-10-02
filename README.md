@@ -93,8 +93,8 @@ precipitation amount, diurnal temperature range and wind have measured weaknesse
 
 ## Roadmap
 
-This is a static snapshot of the downscaling engine. Development continues privately: snow and
-glacier models, station validation, data assimilation, forecasts and climate scenarios exist
+This is a static snapshot of the downscaling engine. Development continues privately: snow models,
+station validation, data assimilation, forecasts and climate scenarios exist
 and will be released as they mature. See [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Contributing

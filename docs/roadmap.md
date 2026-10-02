@@ -26,8 +26,6 @@ same engine:
 - **Snow model (FSM).** The Factorial Snow Model run on every terrain unit: snow depth, SWE,
   melt and runoff, with a Rust core. Known issues are measured and being fixed first: snow-free
   ground too cold, no overburden compaction, late melt-out at mid elevations.
-- **Glacier-enabled snow model.** Ice melt under the snowpack, so units above the
-  equilibrium line lose mass instead of accumulating snow for ever.
 - **More snow models.** SNOWPACK and others fed from the same forcing export.
 - **Hydrology.** HBV and GR4J catchment models on the downscaled forcing.
 

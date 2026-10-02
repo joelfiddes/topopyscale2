@@ -12,7 +12,7 @@ longwave radiation, and precipitation split into rain and snow.
 
 This repository is a **static snapshot** of the downscaling engine. It is developed in a private
 repository and published as releases, so **pull requests cannot be merged**; contributions come
-in as issues (see "Drafting an issue" below). Snow and glacier models, station validation, data
+in as issues (see "Drafting an issue" below). Snow models, station validation, data
 assimilation, forecasts and climate scenarios exist in development but are **not in this
 release** (`docs/roadmap.md`). A config that contains blocks for them (`application:`,
 `validation:`, `da:`, `forecast:`, `topoclim:`, …) still loads; TPS2 warns once that those
