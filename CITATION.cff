@@ -23,13 +23,54 @@ keywords:
   - snow
   - mountain
 references:
-  - type: software
-    title: TopoPyScale
+  # The methods TPS2 implements, and the software it rewrites.
+  - type: article
+    title: "TopoSCALE v.1.0: downscaling gridded climate data in complex terrain"
     authors:
-      - given-names: Simon
-        family-names: Filhol
-      - given-names: Joel
-        family-names: Fiddes
-      - given-names: Kristofer
-        family-names: Aalstad
+      - {given-names: Joel, family-names: Fiddes}
+      - {given-names: Stephan, family-names: Gruber}
+    journal: Geoscientific Model Development
+    volume: 7
+    issue: 1
+    start: 387
+    end: 405
+    year: 2014
+    doi: 10.5194/gmd-7-387-2014
+  - type: article
+    title: "TopoSUB: a tool for efficient large area numerical modelling in complex topography at sub-grid scales"
+    authors:
+      - {given-names: Joel, family-names: Fiddes}
+      - {given-names: Stephan, family-names: Gruber}
+    journal: Geoscientific Model Development
+    volume: 5
+    issue: 5
+    start: 1245
+    end: 1257
+    year: 2012
+    doi: 10.5194/gmd-5-1245-2012
+  - type: article
+    title: "TopoPyScale: A Python Package for Hillslope Climate Downscaling"
+    authors:
+      - {given-names: Simon, family-names: Filhol}
+      - {given-names: Joel, family-names: Fiddes}
+      - {given-names: Kristoffer, family-names: Aalstad}
+    journal: Journal of Open Source Software
+    volume: 8
+    issue: 86
+    start: 5059
+    year: 2023
+    doi: 10.21105/joss.05059
     url: "https://github.com/ArcticSnow/TopoPyScale"
+  - type: article
+    title: "Hyper-resolution ensemble-based snow reanalysis in mountain regions using clustering"
+    authors:
+      - {given-names: Joel, family-names: Fiddes}
+      - {given-names: Kristoffer, family-names: Aalstad}
+      - {given-names: Sebastian, family-names: Westermann}
+    journal: Hydrology and Earth System Sciences
+    volume: 23
+    issue: 11
+    start: 4717
+    end: 4736
+    year: 2019
+    doi: 10.5194/hess-23-4717-2019

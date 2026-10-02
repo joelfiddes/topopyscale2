@@ -115,8 +115,11 @@ getting in touch about co-authorship.
 ## Acknowledgements
 
 TPS2 builds on the original [TopoPyScale](https://github.com/ArcticSnow/TopoPyScale) by Simon
-Filhol, Joel Fiddes and contributors. The downscaling algorithms derive from Fiddes & Gruber
-(2014) and Fiddes et al. (2022).
+Filhol, Joel Fiddes and contributors. The methods are described in Fiddes & Gruber
+(2014, [TopoSCALE](https://doi.org/10.5194/gmd-7-387-2014)), Fiddes & Gruber (2012,
+[TopoSUB](https://doi.org/10.5194/gmd-5-1245-2012)) and Filhol et al. (2023,
+[TopoPyScale](https://doi.org/10.21105/joss.05059)); please cite these alongside TPS2 (all are
+listed in [`CITATION.cff`](CITATION.cff)).
 
 ## License
 
