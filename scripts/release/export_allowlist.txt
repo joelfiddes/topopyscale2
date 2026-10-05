@@ -104,6 +104,7 @@ Dockerfile
 
 # --- the shipped demo (rebuilt byte-identical by the clean-install check) -----------
 examples/forcing_demo/
+examples/points/
 
 # --- release tooling that a snapshot's own check needs -----------------------------
 scripts/release/allowlist.py

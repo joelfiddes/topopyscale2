@@ -1,0 +1,22 @@
+# Point downscaling: forcing for named locations (stations, sites) instead of terrain units.
+#
+#   tps2 run --config examples/points/config.yaml       # a few minutes; ERA5 from Google, no account
+#
+# Each point becomes its own unit, named after it in output/forcing.nc (dimension `unit`), with
+# slope, aspect, horizon and sky view taken from the DEM around the point. Give `elevation` to
+# use the site's surveyed height; leave it out to take it from the DEM. Points can be anywhere:
+# a DEM patch and ERA5 are fetched around each group of nearby points, not for a bounding box.
+domain:
+  spatial_mode: points
+  dem_source: glo_90
+  points:
+    coordinates:
+      - {name: davos, lon: 9.8458, lat: 46.8130}
+      - {name: weissfluhjoch, lon: 9.8094, lat: 46.8297, elevation: 2536}
+inputs:
+  backend: google
+  time_range: ["2024-01-10", "2024-01-11"]
+  pressure_levels: [300, 500, 700, 850, 1000]
+output:
+  format: netcdf
+  directory: ./output

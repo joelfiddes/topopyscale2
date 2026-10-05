@@ -70,6 +70,9 @@ tps2 run  --config ~/sim/davos/config.yaml      # DEM → terrain units → ERA5
 tps2 view ~/sim/davos                           # the forcing page for your run
 ```
 
+For named locations (stations, sites) instead of an area, use points mode:
+`examples/points/config.yaml` downscales to two Swiss sites.
+
 ERA5 comes from Google's public archive by default, with no account needed. The forcing lands
 in `output/forcing.nc` (or `.zarr`) with CF units on every variable.
 

@@ -125,6 +125,33 @@ ds["precipitation"].attrs["units"]        # "kg m-2", an amount per time step (h
 (ds["temperature"].isel(unit=0) - 273.15).plot()
 ```
 
+## Downscale to points: stations and sites
+
+Instead of an area, give named locations. Each point gets its own forcing, with slope, aspect,
+horizon and sky view taken from the DEM around it:
+
+```yaml
+domain:
+  spatial_mode: points
+  points:
+    coordinates:
+      - {name: davos, lon: 9.8458, lat: 46.8130}
+      - {name: weissfluhjoch, lon: 9.8094, lat: 46.8297, elevation: 2536}
+```
+
+`elevation` is optional: give a station's surveyed height, or leave it out to take it from the
+DEM. Points can be far apart: TPS2 fetches a DEM patch and ERA5 around each group of nearby
+points, not one bounding box. A complete config is in `examples/points/config.yaml`:
+
+```bash
+tps2 run --config examples/points/config.yaml     # two Swiss sites, two days, a few minutes
+```
+
+The output has one `unit` per point, named after it:
+`ds["temperature"].sel(unit="weissfluhjoch")`. This is the mode to use for comparing with
+station measurements, since an area run compares a station with the terrain unit it falls in,
+whose mean elevation can differ from the station's.
+
 ## Rebuild the demo page
 
 The page is built from inputs that ship with it (556&nbsp;KB), so it rebuilds offline in

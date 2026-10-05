@@ -102,6 +102,27 @@ if [ ! -f "$F/page.yaml" ] && [ ! -f "$D/page.yaml" ]; then
   echo "no shipped demo in this tree"; exit 1
 fi
 
+if [ "${TPS2_CHECK_ONLINE:-0}" = 1 ]; then
+  # Everything above runs offline. This fetches real ERA5 the way a first-time user does
+  # (default backend, declared dependencies only): v0.1.0 shipped without gcsfs and every
+  # documented first run failed at the download, which no offline check could see.
+  step "online: point downscaling with real ERA5 (examples/points, default backend)"
+  P="$TREE/examples/points/config.yaml"
+  [ -f "$P" ] || { echo "no examples/points/config.yaml in this tree"; exit 1; }
+  mkdir -p "$WORK/points" && cp "$P" "$WORK/points/config.yaml"
+  ( cd "$WORK/points" && NO_COLOR=1 tps2 run --config config.yaml > run.log 2>&1 ) \
+    || { tail -40 "$WORK/points/run.log"; echo "the documented online run fails on a clean install"; exit 1; }
+  python - "$WORK/points/output/forcing.nc" <<'EOF2'
+import sys, xarray as xr
+ds = xr.open_dataset(sys.argv[1])
+names = [str(u) for u in ds["unit"].values]
+assert names == ["davos", "weissfluhjoch"], names
+t = (ds["temperature"] - 273.15).mean("time").values
+assert t[0] > t[1], f"Davos (1560 m) should be warmer than Weissfluhjoch (2536 m): {t}"
+print(f"ok: {len(names)} points, {ds.sizes['time']} hours, mean T {t.round(1)} degC")
+EOF2
+fi
+
 step "the installed package carries the compiled Rust kernels"
 python -c "from topopyscale2.core.dispatch import available_backends as a; b = a(); print(b); assert 'rust' in b" \
     || { echo "the install has no Rust kernels"; exit 1; }

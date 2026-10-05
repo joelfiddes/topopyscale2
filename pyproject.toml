@@ -43,6 +43,9 @@ dependencies = [
     "dem-stitcher",
     "pandas",
     "zarr>=2.16",
+    # the default ERA5 source (Google ARCO-ERA5) reads gs:// through fsspec; without it the
+    # documented first run fails at the download (found 2026-10-05, v0.1.0)
+    "gcsfs",
     # imported at run time by outputs/climatology (previous-year regrid) and the
     # satellite readers; it was only ever present transitively
     "rioxarray>=0.15",
@@ -56,7 +59,7 @@ Issues = "https://github.com/joelfiddes/topopyscale2/issues"
 Changelog = "https://github.com/joelfiddes/topopyscale2/releases"
 
 [project.optional-dependencies]
-google = ["gcsfs", "h5netcdf"]
+google = ["h5netcdf"]   # gcsfs is a core dependency (default backend)
 cds = ["cdsapi"]
 s3 = ["s3fs"]
 # spatial_mode: catchments (flow routing for catchment units)
