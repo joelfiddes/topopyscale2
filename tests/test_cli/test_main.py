@@ -4,6 +4,7 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
+import topopyscale2
 from tests._release import requires
 from topopyscale2.cli.main import app
 
@@ -19,7 +20,7 @@ class TestCLI:
     def test_version(self):
         result = runner.invoke(app, ["--version"])
         assert result.exit_code == 0
-        assert "0.1.0" in result.output
+        assert topopyscale2.__version__ in result.output
 
     def test_info_command(self):
         yaml_path = str(
