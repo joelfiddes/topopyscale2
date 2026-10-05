@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "topopyscale2"
-version = "0.1.0"
+version = "0.1.1"
 description = "Topographic downscaling of meteorological forcing at hillslope resolution"
 readme = "README.md"
 license = "MIT"
