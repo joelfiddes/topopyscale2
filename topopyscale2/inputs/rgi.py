@@ -64,7 +64,10 @@ def fetch_region(region: str, cache: Path = DEFAULT_CACHE) -> Path:
              "-c", str(cache / "cookies"), "-o", str(z), f"{BASE}/{name}.zip"],
             check=True,
         )
-    subprocess.run(["unzip", "-qo", str(z), "-d", str(d)], check=True)
+    import zipfile  # not the unzip command: it does not exist on Windows
+
+    with zipfile.ZipFile(z) as zf:
+        zf.extractall(d)
     hits = glob.glob(str(d / "*.shp"))
     if not hits:
         raise FileNotFoundError(

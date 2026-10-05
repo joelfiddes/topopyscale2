@@ -83,7 +83,7 @@ def test_page_is_deterministic_and_embeds_every_layer(sim_dir, tmp_path):
     a = fp.generate_forcing_page(sim_dir, tmp_path / "a.html", engine_ref="x", run_date="y")
     b = fp.generate_forcing_page(sim_dir, tmp_path / "b.html", engine_ref="x", run_date="y")
     assert a.read_bytes() == b.read_bytes()
-    html = a.read_text()
+    html = a.read_text(encoding="utf-8")
     data = json.loads(re.search(r"const D = (\{.*?\});\n", html, re.S).group(1))
     assert data["layer_order"] == list(fp.LAYERS)
     assert data["n_units"] == N_UNITS and data["ndays"] == 3

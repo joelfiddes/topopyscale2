@@ -20,7 +20,9 @@ step() { printf '\n== %s\n' "$*"; }
 step "fresh virtualenv ($("$PY" --version 2>&1)) in $WORK/venv"
 "$PY" -m venv "$WORK/venv"
 # shellcheck disable=SC1091
-. "$WORK/venv/bin/activate"
+# A venv keeps its programs in bin/ (Linux, macOS) or Scripts/ (Windows, under Git Bash).
+VBIN="$WORK/venv/bin"; [ -d "$VBIN" ] || VBIN="$WORK/venv/Scripts"
+. "$VBIN/activate"
 python -m pip install -q --upgrade pip
 
 step "pip install $TREE (declared dependencies only, no extras)"
@@ -134,7 +136,7 @@ step "the tree's own test suite, against the INSTALLED package"
 # tests/conftest.py refuse to run if topopyscale2 still resolves to the source tree.
 python -m pip install -q pytest
 if ! ( cd "$TREE" && TPS2_EXPECT_INSTALLED=1 TPS2_FSM2_NO_COMPILE=1 NO_COLOR=1 COLUMNS=200 \
-        "$WORK/venv/bin/pytest" tests -q -rs -p no:cacheprovider --import-mode=append ); then
+        "$VBIN/pytest" tests -q -rs -p no:cacheprovider --import-mode=append ); then
   echo "the shipped tests fail on a clean install"; exit 1
 fi
 

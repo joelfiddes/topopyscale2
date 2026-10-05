@@ -80,6 +80,8 @@ CONTRIBUTING.md
 .github/pull_request_template.public.md
 # wheels: runs only on a v* tag or by hand, so it costs nothing until a release is tagged
 .github/workflows/wheels.yml
+.github/workflows/fresh-install.yml
+.gitattributes
 .gitignore
 
 # --- public docs site (transforms.py moves the public variants into place) ---------

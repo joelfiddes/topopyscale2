@@ -9,6 +9,7 @@ July 2024) above Davos, Switzerland. One ERA5 grid cell, which sees smooth groun
 ```bash
 open examples/forcing_demo/demo.html        # macOS
 xdg-open examples/forcing_demo/demo.html    # Linux
+start examples\forcing_demo\demo.html      # Windows (PowerShell or cmd)
 ```
 
 Everything is embedded, so it works offline. Pick a variable and press play; the panel beside
@@ -18,8 +19,8 @@ the map shows each unit's value against its elevation for the day on screen.
 
 === "From a release (no Rust needed)"
 
-    Each release has prebuilt wheels for Linux and macOS (x86_64 and arm64, Python
-    3.11–3.13) with the Rust kernels compiled in. Download the one for your platform from
+    Each release has prebuilt wheels for Linux and macOS (x86_64 and arm64) and Windows
+    (x86_64), for Python 3.11–3.13, with the Rust kernels compiled in. Download the one for your platform from
     the release page, then:
 
     ```bash
@@ -75,6 +76,7 @@ examples/forcing_demo/run_demo.sh      # into ~/sim/davos_forcing_demo
 | 3. Downscale: hourly forcing for every unit | `tps2 run --config config.yaml` |
 | 4. Results: the forcing page | `tps2 view . --save-daily` |
 
+On Windows, run the script from Git Bash or WSL, or type the four commands into PowerShell.
 `tps2 run` reuses what steps 1 and 2 cached, so after changing the downscaling options you
 re-run step 3 in seconds.
 

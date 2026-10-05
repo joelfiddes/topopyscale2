@@ -1,0 +1,10 @@
+# Check out text files with LF everywhere, Windows included. The shipped demo page is
+# compared byte for byte with what `tps2 view` writes (always LF), and Git for Windows
+# would otherwise convert it to CRLF on checkout.
+* text=auto eol=lf
+*.tif binary
+*.nc binary
+*.png binary
+*.whl binary
+# Vendored third-party files keep their bytes exactly (their checksums are recorded).
+topopyscale2/outputs/dashboard_assets/vendor/** -text

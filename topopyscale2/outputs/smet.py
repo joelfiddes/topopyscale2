@@ -103,7 +103,7 @@ class SMETWriter:
         """
         station_name = self.station_name or f"TPS2_{unit.id}"
 
-        with open(filepath, "w") as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             # SMET header
             f.write("SMET 1.1 ASCII\n")
             f.write("[HEADER]\n")

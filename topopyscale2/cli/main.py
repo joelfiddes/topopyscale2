@@ -247,12 +247,12 @@ def init(
 
     # Write config file
     config_path = path / "config.yaml"
-    config_path.write_text(config_content)
+    config_path.write_text(config_content, encoding="utf-8")
     console.print("  Created config.yaml")
 
     # Write run script
     run_path = path / "run.sh"
-    run_path.write_text(_RUN_TEMPLATE)
+    run_path.write_text(_RUN_TEMPLATE, encoding="utf-8")
     run_path.chmod(0o755)  # Make executable
     console.print("  Created run.sh")
 
@@ -309,7 +309,7 @@ def _write_progress(sim_dir: Path, steps: list[dict]) -> None:
     (sim_dir / "progress.json").write_text(json.dumps({
         "timestamp": datetime.now().isoformat(),
         "steps": steps,
-    }))
+    }), encoding="utf-8")
 
 
 @app.command()

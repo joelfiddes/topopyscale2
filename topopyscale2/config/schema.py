@@ -1538,7 +1538,7 @@ class TPS2Config(BaseModel):
     def from_yaml(cls, path: str | Path) -> "TPS2Config":
         """Load configuration from a YAML file."""
         path = Path(path).resolve()
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
         config = cls(**data)
         config._config_dir = path.parent

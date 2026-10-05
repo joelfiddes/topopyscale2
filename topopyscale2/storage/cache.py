@@ -139,7 +139,7 @@ class NWPCache:
         """Load cache index from disk."""
         if self._index_path.exists():
             try:
-                with open(self._index_path) as f:
+                with open(self._index_path, encoding="utf-8") as f:
                     data = json.load(f)
                 for source_name, entries in data.items():
                     self._entries[source_name] = [
@@ -155,7 +155,7 @@ class NWPCache:
         data = {}
         for source_name, entries in self._entries.items():
             data[source_name] = [e.to_dict() for e in entries]
-        with open(self._index_path, "w") as f:
+        with open(self._index_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
     def _compute_store_size(self, path: Path) -> int:

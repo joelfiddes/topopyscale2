@@ -212,7 +212,10 @@ def test_status_stopped_when_killed(ui):
     req(port, "POST", "/api/run", {}, token=state.token)
     state.proc.kill()
     state.proc.wait()
-    assert _wait_done(port)["status"] == "stopped"
+    # POSIX reports the kill signal (negative exit code); Windows reports a plain exit code,
+    # so a killed run there is indistinguishable from a failed one.
+    expected = "failed" if sys.platform == "win32" else "stopped"
+    assert _wait_done(port)["status"] == expected
 
 
 @pytest.mark.parametrize("log,expected", [
@@ -222,7 +225,7 @@ def test_status_stopped_when_killed(ui):
 def test_status_after_a_server_restart_comes_from_the_log(ui, tmp_path, log, expected):
     sim = tmp_path / "restarted"
     sim.mkdir()
-    (sim / "ui_run.log").write_text(log)
+    (sim / "ui_run.log").write_bytes(log.encode())   # exact bytes on every OS
     port, _ = ui(sim_dir=sim)
     st = req(port, "GET", "/api/state")[1]
     assert st["run_status"] == expected and not st["running"] and st["log_size"] == len(log)

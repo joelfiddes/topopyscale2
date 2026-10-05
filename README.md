@@ -25,7 +25,7 @@ TPS2 is a ground-up rewrite of [TopoPyScale](https://github.com/ArcticSnow/TopoP
 ## See it without installing
 
 ```bash
-open examples/forcing_demo/demo.html        # macOS  (xdg-open on Linux)
+open examples/forcing_demo/demo.html        # macOS  (xdg-open on Linux, start on Windows)
 ```
 
 One season (October 2023 to July 2024) above Davos, Switzerland: one ERA5 grid cell, which sees
@@ -36,7 +36,7 @@ elevation shows what the downscaling does. Everything is embedded; it works offl
 ## Install
 
 ```bash
-# A release wheel (Linux and macOS, x86_64 and arm64, Python 3.11–3.13; no Rust needed)
+# A release wheel (Linux, macOS, Windows; Python 3.11–3.13; no Rust needed)
 pip install topopyscale2-*.whl
 
 # From source with conda (conda-forge provides GDAL/rasterio and the Rust toolchain)

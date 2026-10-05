@@ -107,7 +107,7 @@ def load_colormap(name: str) -> mcolors.Colormap:
     """
     json_path = _COLORMAP_DIR / f"{name}.json"
     if json_path.exists():
-        with open(json_path) as f:
+        with open(json_path, encoding="utf-8") as f:
             spec = json.load(f)
         mpl = spec.get("matplotlib", {})
         colors = mpl.get("colors", [c["hex"] for c in spec.get("colors", [])])

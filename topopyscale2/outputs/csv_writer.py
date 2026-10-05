@@ -199,7 +199,7 @@ class CSVWriter:
         filepath = output_dir / f"forcing_{unit.id}.csv"
 
         # Write file
-        with open(filepath, "w") as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             if self.include_metadata_header:
                 variables = self.variables or list(ds.data_vars)
                 self._write_metadata_header(f, unit, variables)
@@ -294,7 +294,7 @@ class CSVWriter:
         filepath = output_dir / "forcing_combined.csv"
 
         # Write with metadata header
-        with open(filepath, "w") as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             if self.include_metadata_header:
                 variables = self.variables or list(forcing.data_vars)
                 self._write_metadata_header(f, None, variables)
@@ -361,7 +361,7 @@ class CSVWriter:
         filepath = output_dir / "forcing_wide.csv"
 
         # Write with metadata header
-        with open(filepath, "w") as f:
+        with open(filepath, "w", encoding="utf-8") as f:
             if self.include_metadata_header:
                 self._write_metadata_header(f, None, vars_to_use)
                 f.write(f"# Units: {', '.join(u.id for u in units)}\n")
