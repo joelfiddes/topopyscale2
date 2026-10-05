@@ -2,12 +2,15 @@
 
 Topographic downscaling of climate reanalysis onto real mountain terrain.
 
-TopoPyScale 2 (TPS2) takes ERA5 reanalysis (about 31&nbsp;km per grid cell), groups a
-30–90&nbsp;m DEM into terrain units of similar elevation, slope, aspect and sky view, and gives
-each unit its own hourly forcing:
+TopoPyScale 2 (TPS2) takes ERA5 reanalysis (about 31&nbsp;km per grid cell) and gives hourly
+forcing to the terrain it does not resolve, in either of two ways:
+
+- **an area:** a 30–90&nbsp;m DEM is grouped into terrain units of similar elevation, slope,
+  aspect and sky view, and each unit gets its own forcing;
+- **named points:** weather stations or field sites, each with its own forcing.
 
 ```
-ERA5 (~31 km) ──► TPS2 ──► hourly forcing per terrain unit (NetCDF / Zarr, CF units)
+ERA5 (~31 km) ──► TPS2 ──► hourly forcing per terrain unit or point (NetCDF / Zarr, CF units)
                    │
                    ├── Temperature, humidity   interpolated from the pressure levels to each unit
                    ├── Shortwave               slope, aspect, terrain shading, sky view
@@ -70,9 +73,6 @@ tps2 run  --config ~/sim/davos/config.yaml      # DEM → terrain units → ERA5
 tps2 view ~/sim/davos                           # the forcing page for your run
 ```
 
-For named locations (stations, sites) instead of an area, use points mode:
-`examples/points/config.yaml` downscales to two Swiss sites.
-
 ERA5 comes from Google's public archive by default, with no account needed. The forcing lands
 in `output/forcing.nc` (or `.zarr`) with CF units on every variable.
 
@@ -85,6 +85,38 @@ in `output/forcing.nc` (or `.zarr`) with CF units on every variable.
 | `tps2 view <dir>` | Self-contained HTML page of the downscaled forcing |
 | `tps2 info` / `preflight` / `evaluate-clusters` | Inspect a domain, check a config, compare cluster counts |
 | `tps2 build-cache` | Build a local ERA5 Zarr cache for a region |
+
+## Point downscaling: stations and sites
+
+Instead of an area, list named locations. Each point gets its own forcing, with slope, aspect,
+horizon and sky view taken from the DEM around it:
+
+```yaml
+domain:
+  spatial_mode: points
+  points:
+    coordinates:
+      - {name: davos, lon: 9.8458, lat: 46.8130}
+      - {name: weissfluhjoch, lon: 9.8094, lat: 46.8297, elevation: 2536}
+```
+
+```bash
+tps2 run --config examples/points/config.yaml     # two Swiss sites, two days, under a minute
+```
+
+```python
+import xarray as xr
+ds = xr.open_dataset("output/forcing.nc")
+ds["temperature"].sel(unit="weissfluhjoch")       # one unit per point, named after it
+```
+
+- `elevation` is optional: give a station's surveyed height, or leave it out to take it from the DEM.
+- Points can be far apart: TPS2 fetches a DEM patch and ERA5 around each group of nearby points,
+  not one bounding box covering them all.
+- Use this mode to compare with station measurements. An area run compares a station with the
+  terrain unit it falls in, whose mean elevation and exposure can differ from the station's.
+
+The complete config is [`examples/points/config.yaml`](examples/points/config.yaml).
 
 ## Documentation
 
