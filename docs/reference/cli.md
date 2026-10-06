@@ -13,6 +13,7 @@ TopoPyScale 2.0 -- Topographic downscaling of meteorological forcing
 |---|---|
 | `tps2 build-cache` | Build a regional ERA5 Zarr cache for fast local access. |
 | `tps2 evaluate-clusters` | Evaluate cluster quality metrics to help choose n_clusters. |
+| `tps2 export` | Export a run's forcing as input files for an impact model. |
 | `tps2 fetch-forcing` | Fetch NWP forcing data (ERA5 or IFS). |
 | `tps2 info` | Show domain summary information including Phase 2 configuration. |
 | `tps2 init` | Initialize a new simulation directory with template config. |
@@ -75,6 +76,24 @@ Metrics guide:
 | `--k-min` | option | integer | 50 |  | Minimum k for elbow analysis. |
 | `--k-max` | option | integer | 5000 |  | Maximum k for elbow analysis. |
 | `--k-steps` | option | integer | 8 |  | Number of k values to test in elbow analysis. |
+
+### `tps2 export`
+
+Export a run's forcing as input files for an impact model.
+
+smet: SNOWPACK / Alpine3D / MeteoIO. fsm: FSM single-point files. fsm2: FSM2 multi-point
+file. csv: one table per unit. crocus: Crocus / SURFEX FORCING. cryogrid: CryoGrid.
+hbv: daily temperature, precipitation and PET (Hamon).
+
+Examples:
+    tps2 export ~/sim/davos --format smet
+    tps2 export ~/sim/davos -f fsm -o ~/models/fsm/met
+
+| Parameter | Kind | Type | Default | Required | Description |
+|---|---|---|---|---|---|
+| `SIM_DIR` | argument | path |  | yes | Simulation directory (after `tps2 run`) |
+| `--format`, `-f` | option | text |  | yes | smet, fsm, fsm2, csv, crocus, cryogrid or hbv |
+| `--output`, `-o` | option | path |  |  | Directory to write into (default: <sim_dir>/output/<format>) |
 
 ### `tps2 fetch-forcing`
 

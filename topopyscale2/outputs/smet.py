@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from topopyscale2.outputs.base import relative_humidity_percent
 from topopyscale2.spatial.units import SpatialUnit
 
 
@@ -129,7 +130,7 @@ class SMETWriter:
             for i, t in enumerate(times):
                 timestamp = self._format_timestamp(t)
                 ta = data["temperature"][i]
-                rh = data["humidity_relative"][i] * 100.0  # Convert to %
+                rh = data["humidity_relative"][i]  # already % (relative_humidity_percent)
                 vw = data["wind_speed"][i]
                 iswr = data["shortwave_total"][i]
                 ilwr = data["longwave"][i]
@@ -182,13 +183,14 @@ class SMETWriter:
             # Prepare data arrays
             data = {
                 "temperature": ds["temperature"].values,
-                "humidity_relative": ds["humidity_relative"].values,
+                "humidity_relative": relative_humidity_percent(ds["humidity_relative"]),
                 "wind_speed": ds["wind_speed"].values,
                 "shortwave_total": (
                     ds["shortwave_direct"].values + ds["shortwave_diffuse"].values
                 ),
                 "longwave": ds["longwave"].values,
-                "precipitation": ds["precipitation"].values * 1000.0,  # kg/m2 -> mm
+                # TPS2 precipitation is an amount per time step in kg m-2, which IS mm
+                "precipitation": ds["precipitation"].values,
             }
 
             if self.include_precip_phase:

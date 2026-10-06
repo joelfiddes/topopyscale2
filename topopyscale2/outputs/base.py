@@ -146,3 +146,21 @@ def with_cf_metadata(ds, *, engine_ref: str | None = None, run_date: str | None 
         or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
     })
     return ds
+
+
+def relative_humidity_percent(da):
+    """Relative humidity in % from a forcing variable, whatever convention it was written in.
+
+    TPS2 forcing stores ``humidity_relative`` as a 0-1 fraction (CF units "1"); model input
+    formats (FSM, SNOWPACK SMET) expect %. Decided by the units attribute when present, else
+    by magnitude (forcing written before units were recorded).
+    """
+    import numpy as np
+
+    values = np.asarray(getattr(da, "values", da), dtype=float)
+    units = str(getattr(da, "attrs", {}).get("units", "")).strip()
+    if units in ("%", "percent"):
+        return values
+    if units == "1" or np.nanmax(values) <= 1.5:
+        return values * 100.0
+    return values

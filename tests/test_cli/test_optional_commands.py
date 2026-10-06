@@ -8,7 +8,7 @@ import pytest
 
 from tests._release import requires
 
-V1_COMMANDS = {"init", "setup", "fetch-forcing", "run", "info", "preflight", "view", "ui",
+V1_COMMANDS = {"init", "setup", "fetch-forcing", "run", "info", "preflight", "view", "ui", "export",
                "evaluate-clusters", "build-cache"}
 
 

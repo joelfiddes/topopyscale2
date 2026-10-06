@@ -51,6 +51,12 @@ topopyscale2/inputs/nwp_downloader/
 topopyscale2/outputs/__init__.py
 topopyscale2/outputs/base.py
 topopyscale2/outputs/csv_writer.py
+topopyscale2/outputs/export.py
+topopyscale2/outputs/fsm.py
+topopyscale2/outputs/fsm2.py
+topopyscale2/outputs/crocus.py
+topopyscale2/outputs/cryogrid.py
+topopyscale2/outputs/hbv.py
 topopyscale2/outputs/forcing_page.py
 topopyscale2/outputs/forcing_page_template.html
 topopyscale2/outputs/netcdf.py
@@ -144,13 +150,9 @@ tests/test_ui/
 !tests/test_inputs/test_station_data/
 !tests/test_inputs/test_undercatch.py
 !tests/test_outputs/test_climatology.py
-!tests/test_outputs/test_crocus.py
-!tests/test_outputs/test_cryogrid.py
 !tests/test_outputs/test_dashboard_info_resources.py
 !tests/test_outputs/test_dashboard_vendored_assets.py
 !tests/test_outputs/test_ensemble.py
-!tests/test_outputs/test_fsm.py
-!tests/test_outputs/test_hbv.py
 !tests/test_outputs/test_partner_logos.py
 !tests/test_outputs/test_snow_page.py
 !tests/test_outputs/test_tile_manifest.py

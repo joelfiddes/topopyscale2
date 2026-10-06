@@ -102,7 +102,8 @@ execution:
 # Output
 # =============================================================================
 output:
-  # Output format: zarr, netcdf, fsm, smet, csv
+  # Output format: netcdf or zarr. For model input files (SNOWPACK SMET, FSM, Crocus,
+  # CryoGrid, HBV, CSV) run `tps2 export <sim_dir> --format ...` after `tps2 run`.
   format: zarr
 
   # Output directory (relative to this config file)
@@ -1412,6 +1413,39 @@ def ui(
         console.print("stopped")
     finally:
         server.server_close()
+
+
+@app.command()
+def export(
+    sim_dir: Path = typer.Argument(..., help="Simulation directory (after `tps2 run`)"),
+    fmt: str = typer.Option(..., "--format", "-f",
+                            help="smet, fsm, fsm2, csv, crocus, cryogrid or hbv"),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o", help="Directory to write into (default: <sim_dir>/output/<format>)"),
+):
+    """Export a run's forcing as input files for an impact model.
+
+    smet: SNOWPACK / Alpine3D / MeteoIO. fsm: FSM single-point files. fsm2: FSM2 multi-point
+    file. csv: one table per unit. crocus: Crocus / SURFEX FORCING. cryogrid: CryoGrid.
+    hbv: daily temperature, precipitation and PET (Hamon).
+
+    Examples:
+        tps2 export ~/sim/davos --format smet
+        tps2 export ~/sim/davos -f fsm -o ~/models/fsm/met
+    """
+    from topopyscale2.outputs.export import FORMATS
+    from topopyscale2.outputs.export import export as run_export
+
+    if fmt not in FORMATS:
+        console.print(f"[red]Unknown format '{fmt}'.[/red] Choose from: {', '.join(FORMATS)}")
+        raise typer.Exit(2)
+    try:
+        paths = run_export(sim_dir, fmt, output)
+    except (FileNotFoundError, ValueError) as e:
+        console.print(f"[red]{e}[/red]")
+        raise typer.Exit(1) from None
+    where = paths[0].parent if paths else (output or sim_dir / "output" / fmt)
+    console.print(f"[green]{FORMATS[fmt][2]}:[/green] {len(paths)} file(s) in {where}")
 
 
 @app.command(name="build-cache")

@@ -127,6 +127,29 @@ ds["precipitation"].attrs["units"]        # "kg m-2", an amount per time step (h
 (ds["temperature"].isel(unit=0) - 273.15).plot()
 ```
 
+## Export to model formats
+
+`tps2 run` writes NetCDF (or Zarr). To drive an impact model, export the run to its input
+format; the files land in `output/<format>/`:
+
+```bash
+tps2 export ~/sim/davos --format smet     # SNOWPACK / Alpine3D / MeteoIO
+```
+
+| `--format` | For | Files |
+|---|---|---|
+| `smet` | SNOWPACK, Alpine3D, MeteoIO | one `.smet` per unit |
+| `fsm` | FSM (single point) | one `.txt` per unit |
+| `fsm2` | FSM2 (multi-point) | one `met_input.txt` |
+| `csv` | spreadsheets, R, pandas | one `.csv` per unit |
+| `crocus` | Crocus / SURFEX | one `FORCING`-style `.nc` per unit |
+| `cryogrid` | CryoGrid | one `.nc` per unit |
+| `hbv` | HBV-style hydrological models | daily temperature, precipitation and PET (Hamon) |
+
+Units are converted to what each model reads: precipitation to a rate or a total as the
+format expects, relative humidity to %. Each unit's position and elevation come from the
+forcing file, so an export needs nothing else from the run.
+
 ## Downscale to points: stations and sites
 
 Instead of an area, give named locations. Each point gets its own forcing, with slope, aspect,
