@@ -272,3 +272,51 @@ class TestGoogleCloudBackendClose:
             )
             # Should not raise
             backend.close()
+
+
+class TestValidVarsDiscoveryThreads:
+    """Days are fetched in parallel: discovery must finish before anyone reads it."""
+
+    def test_concurrent_classification_waits_for_discovery(self, sample_bbox: BBox, monkeypatch):
+        import threading
+        import time
+
+        from topopyscale2.inputs.nwp_downloader.reanalysis.backends import google
+
+        listings = {
+            "single_level": ["2m_temperature.nc"],
+            "pressure_level": ["temperature"],
+            "temperature": ["850"],
+        }
+
+        class SlowFS:
+            def ls(self, path):
+                time.sleep(0.05)  # a listing over the network
+                key = path.rstrip("/").split("/")[-1]
+                if key not in listings:
+                    key = "single_level" if "single_level" in path else "pressure_level"
+                return [f"{path}/{name}" for name in listings[key]]
+
+        monkeypatch.setattr(google.fsspec, "filesystem", lambda *a, **k: SlowFS())
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backend = GoogleCloudBackend(bbox=sample_bbox, pressure_levels=[850], cache_dir=tmpdir)
+            results, errors = [], []
+
+            def classify(delay):
+                # The first thread starts discovery; the others arrive while it is
+                # still listing (three listings of 0.05 s each).
+                time.sleep(delay)
+                try:
+                    results.append(backend._surface_or_level("temperature"))
+                except Exception as e:  # noqa: BLE001 - the race raised TypeError
+                    errors.append(e)
+
+            threads = [threading.Thread(target=classify, args=(0.02 * i,)) for i in range(8)]
+            for t in threads:
+                t.start()
+            for t in threads:
+                t.join()
+
+        assert not errors, errors
+        assert results == ["level"] * 8

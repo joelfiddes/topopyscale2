@@ -191,11 +191,23 @@ class GoogleCloudBackend(ERA5Backend):
         self._valid_surface_vars: list[str] | None = None
         self._valid_level_vars: list[str] | None = None
         self._valid_levels: list[int] | None = None
+        self._valid_vars_lock = threading.Lock()
 
     def _ensure_valid_vars(self):
-        """Lazily discover available variables from the Google store."""
+        """Lazily discover available variables from the Google store.
+
+        Days are fetched from several threads at once. ``_valid_surface_vars``
+        doubles as the done flag, so it is set last and under a lock: setting
+        it first let another thread read ``_valid_level_vars`` while still None.
+        """
         if self._valid_surface_vars is not None:
             return
+        with self._valid_vars_lock:
+            if self._valid_surface_vars is not None:
+                return
+            self._discover_valid_vars()
+
+    def _discover_valid_vars(self):
 
         fs = fsspec.filesystem("gs", token="anon")
         t = pd.Timestamp("2000-01-01")
@@ -212,11 +224,12 @@ class GoogleCloudBackend(ERA5Backend):
         def get_name(f):
             return f.split("/")[-1].replace(".nc", "")
 
-        self._valid_surface_vars = [get_name(f) for f in fs.ls(base_surface)]
+        surface_vars = [get_name(f) for f in fs.ls(base_surface)]
         self._valid_level_vars = [get_name(f) for f in fs.ls(base_levels)]
 
         level_path = f"{base_levels}/temperature"
         self._valid_levels = sorted([int(get_name(f)) for f in fs.ls(level_path)])
+        self._valid_surface_vars = surface_vars
 
         logger.debug("Valid surface vars: %s", self._valid_surface_vars)
         logger.debug("Valid level vars: %s", self._valid_level_vars)
