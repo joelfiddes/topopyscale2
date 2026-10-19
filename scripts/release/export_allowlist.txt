@@ -155,6 +155,7 @@ tests/test_ui/
 !tests/test_outputs/test_ensemble.py
 !tests/test_outputs/test_partner_logos.py
 !tests/test_outputs/test_snow_page.py
+!tests/test_outputs/test_subdaily_tile_vars.py
 !tests/test_outputs/test_tile_manifest.py
 !tests/test_outputs/test_water_balance.py
 !tests/test_water_year.py

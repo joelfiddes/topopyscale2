@@ -123,6 +123,36 @@ t = (ds["temperature"] - 273.15).mean("time").values
 assert t[0] > t[1], f"Davos (1560 m) should be warmer than Weissfluhjoch (2536 m): {t}"
 print(f"ok: {len(names)} points, {ds.sizes['time']} hours, mean T {t.round(1)} degC")
 EOF2
+
+  # Points far apart form several groups, each with its own ERA5 patch. Up to 0.1.3 they
+  # shared one forcing cache and every group got the first group's patch, so distant points
+  # were extrapolated off the grid (338 K, 602 m/s) without any error. The example above is
+  # a single group and could not see it. A point must downscale the same in company as alone.
+  step "online: distant points get their own ERA5 (multi-group == each point alone)"
+  pts_cfg() {
+    printf 'domain:\n  spatial_mode: points\n  dem_source: glo_90\n  points:\n    coordinates:\n'
+    for p in "$@"; do printf '      - %s\n' "$p"; done
+    printf 'inputs:\n  backend: google\n  time_range: ["2024-01-10", "2024-01-11"]\n'
+    printf '  pressure_levels: [300, 500, 700, 850, 1000]\noutput:\n  format: netcdf\n  directory: ./output\n'
+  }
+  DAVOS='{name: davos, lon: 9.8458, lat: 46.8130}'
+  GORNERGRAT='{name: gornergrat, lon: 7.7855, lat: 45.9836}'
+  mkdir -p "$WORK/multi" "$WORK/alone"
+  pts_cfg "$DAVOS" "$GORNERGRAT" > "$WORK/multi/config.yaml"
+  pts_cfg "$GORNERGRAT" > "$WORK/alone/config.yaml"
+  for d in multi alone; do
+    ( cd "$WORK/$d" && NO_COLOR=1 tps2 run --config config.yaml > run.log 2>&1 ) \
+      || { tail -40 "$WORK/$d/run.log"; echo "the $d points run fails"; exit 1; }
+  done
+  python - "$WORK/multi/output/forcing.nc" "$WORK/alone/output/forcing.nc" <<'EOF2'
+import sys, numpy as np, xarray as xr
+multi = xr.open_dataset(sys.argv[1]).sel(unit="gornergrat")
+alone = xr.open_dataset(sys.argv[2]).sel(unit="gornergrat")
+for v in ("temperature", "pressure", "longwave", "wind_speed"):
+    diff = float(np.abs(multi[v] - alone[v]).max())
+    assert diff < 1e-6, f"gornergrat {v} differs by {diff} when run with davos: groups share ERA5"
+print("ok: gornergrat identical with and without davos")
+EOF2
 fi
 
 step "the installed package carries the compiled Rust kernels"

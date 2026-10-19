@@ -43,6 +43,33 @@ def _lonlat_to_crs_transform(target_crs):
     return lambda lon, lat: transformer.transform(lon, lat)
 
 
+def _patch_cache_name(bbox) -> str:
+    """Cache subdirectory for one sparse-points ERA5 patch, named by its bbox."""
+    return "patch_" + "_".join(f"{float(v):.3f}" for v in bbox)
+
+
+def _check_patch_covers(ds: xr.Dataset, bbox, index: int) -> None:
+    """Raise unless a fetched ERA5 patch contains the centre of its bbox.
+
+    The bbox is the group's points padded by 1 degree, so its centre lies
+    among the points. A patch that misses it was read from the wrong place,
+    and downscaling would extrapolate far outside the grid.
+    """
+    west, south, east, north = (float(v) for v in bbox)
+    lon_c, lat_c = (west + east) / 2, (south + north) / 2
+    lat_name = "latitude" if "latitude" in ds.coords else "lat"
+    lon_name = "longitude" if "longitude" in ds.coords else "lon"
+    lats, lons = ds[lat_name].values, ds[lon_name].values
+    if (lats.size == 0 or lons.size == 0
+            or not lats.min() <= lat_c <= lats.max()
+            or not lons.min() <= lon_c <= lons.max()):
+        raise RuntimeError(
+            f"ERA5 patch {index + 1} for bbox {bbox} does not cover its points "
+            f"(got lat {lats.min() if lats.size else 'none'}..{lats.max() if lats.size else 'none'}, "
+            f"lon {lons.min() if lons.size else 'none'}..{lons.max() if lons.size else 'none'})"
+        )
+
+
 class Domain:
     """Top-level domain object: setup, fetch, downscale."""
 
@@ -842,15 +869,11 @@ class Domain:
             )
 
         # Sparse points mode: fetch per-group ERA5 patches and merge
-        if self._sparse_era5_bboxes and len(self._sparse_era5_bboxes) > 1:
+        if self._sparse_era5_bboxes:
             self._fetch_sparse_forcing(tr, required_vars)
         else:
-            if self._sparse_era5_bboxes and len(self._sparse_era5_bboxes) == 1:
-                bbox = self._sparse_era5_bboxes[0]
-            else:
-                bbox = self._get_bbox()
             self._ds_surface, self._ds_pressure = self._nwp_source.fetch(
-                bbox, tr, required_vars=required_vars,
+                self._get_bbox(), tr, required_vars=required_vars,
             )
 
     def _fetch_sparse_forcing(
@@ -864,15 +887,25 @@ class Domain:
         the patches into single surface and pressure datasets.  Overlapping
         grid cells are combined automatically by xarray; non-overlapping
         regions are filled with NaN (which the downscaler never reads).
+
+        Each patch gets its own cache directory, keyed on its bbox. The
+        forcing cache only records which dates it holds, not where, so a
+        shared directory hands every group the first group's patch.
         """
         surf_patches: list[xr.Dataset] = []
         pres_patches: list[xr.Dataset] = []
+        cache_root = Path(self.config.storage.forcing_cache)
 
         for i, bbox in enumerate(self._sparse_era5_bboxes):
             log.info("Fetching ERA5 patch %d/%d: %s", i + 1, len(self._sparse_era5_bboxes), bbox)
-            ds_s, ds_p = self._nwp_source.fetch(
+            patch_storage = self.config.storage.model_copy(
+                update={"forcing_cache": cache_root / _patch_cache_name(bbox)}
+            )
+            source = type(self._nwp_source)(self.config.inputs, patch_storage)
+            ds_s, ds_p = source.fetch(
                 bbox, time_range, required_vars=required_vars,
             )
+            _check_patch_covers(ds_s, bbox, i)
             surf_patches.append(ds_s)
             if ds_p is not None:
                 pres_patches.append(ds_p)

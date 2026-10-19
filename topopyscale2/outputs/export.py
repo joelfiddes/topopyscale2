@@ -24,6 +24,7 @@ from pathlib import Path
 
 import xarray as xr
 
+from topopyscale2.core.forcing_checks import check_forcing
 from topopyscale2.spatial.units import SpatialUnit
 
 FORMATS = {
@@ -72,6 +73,7 @@ def export(sim_dir: Path, fmt: str, output_dir: Path | None = None) -> list[Path
     opener = xr.open_zarr if path.suffix == ".zarr" else xr.open_dataset
     with opener(path) as ds:
         ds = ds.load()
+    check_forcing(ds, f"{path.name} (tps2 export)")
     units = units_from_forcing(ds)
     # The writers index units along `unit_id` (the FSM output convention); forcing uses `unit`.
     if "unit" in ds.dims:

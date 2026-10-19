@@ -103,3 +103,20 @@ TPS2 models **terrain units**: groups of pixels with similar elevation, slope, a
 sky-view. It does not model individual points. A station is compared with the unit it falls in,
 whose mean elevation and exposure can differ from the station's. When you validate against point data,
 check that the unit represents the point, or run in `points` mode.
+
+### The DEM download can hang on managed machines
+
+On one university-managed Windows machine (reported in public issue #1), the DEM step
+froze for ever after "Opening glo_90 Datasets": the DEM library started a thread just after a
+remote HTTPS read, and that thread never started. The stuck process survived
+`taskkill /F`, which points to software below Python, such as endpoint security, though this
+was not confirmed. Since 0.1.4, Copernicus DEMs (`glo_30`, `glo_90`) are downloaded one tile at
+a time with a 60-second timeout, kept in `dem_cache/tiles/`, and merged from disk without
+threads. A stalled download now stops with an error listing the tile URLs. Other DEM sources
+still go through the old path.
+
+If the download cannot run on your machine, fetch the tiles listed in the error another way
+(a browser or `curl`), put them in `dem_cache/tiles/`, and run again. Or set `domain.dem` to a
+GeoTIFF you already have. This works in every spatial mode, including `points` without a
+bounding box. See "Use your own DEM" in Get started. The ERA5 download makes HTTPS calls from
+threads too, and has not been tested on such a machine.

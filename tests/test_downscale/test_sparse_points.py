@@ -292,3 +292,144 @@ class TestPointUnitsCRS:
 
         assert [u.x for u in units] == [69.0, 75.4]
         assert [u.y for u in units] == [38.7, 35.3]
+
+
+class TestPointsWithLocalDEM:
+    """domain.dem with no bbox: a user DEM replaces the per-group downloads.
+
+    The documented way round a DEM download that cannot run on the user's
+    machine (public issue #1).
+    """
+
+    def test_setup_uses_local_dem_and_never_downloads(self, tmp_path, monkeypatch):
+        import numpy as np
+        import rasterio
+        from rasterio.transform import from_origin
+
+        import topopyscale2.inputs.dem_download as dd
+
+        def no_download(*a, **k):
+            raise AssertionError("downloaded a DEM although domain.dem is set")
+        monkeypatch.setattr(dd, "download_dem", no_download)
+        monkeypatch.chdir(tmp_path)
+
+        # Plane rising 5 m per column eastwards and 3 m per row southwards
+        n = 240
+        rows, cols = np.mgrid[0:n, 0:n]
+        with rasterio.open(
+            tmp_path / "dem.tif", "w", driver="GTiff", width=n, height=n, count=1,
+            dtype="float32", crs="EPSG:4326",
+            transform=from_origin(9.7, 46.9, 1 / 120, 1 / 120),
+        ) as dst:
+            dst.write((1500 + 5 * cols + 3 * rows).astype("float32"), 1)
+
+        cfg = TPS2Config(domain=DomainConfig(
+            spatial_mode="points",
+            dem=str(tmp_path / "dem.tif"),
+            points=PointsConfig(coordinates=_make_points(
+                ("a", 9.8, 46.8), ("b", 10.2, 46.5),
+            )),
+        ))
+        d = Domain(cfg)
+        d.setup()
+
+        units = {u.id: u for u in d.units}
+        assert set(units) == {"a", "b"}
+        assert units["a"].attributes["elevation"] == pytest.approx(1596.0, abs=10)
+        assert units["b"].attributes["elevation"] == pytest.approx(1944.0, abs=10)
+        for u in units.values():
+            assert u.attributes["slope"] > 0
+            assert 0.9 < u.attributes["svf"] <= 1.0
+        # ERA5 area still follows the points (padded by 1°)
+        assert d._get_bbox() == pytest.approx((8.8, 45.5, 11.2, 47.8))
+
+
+# ---------------------------------------------------------------------------
+# Per-group ERA5 patches must not share one forcing cache
+# ---------------------------------------------------------------------------
+
+def _grid(bbox):
+    import numpy as np
+    import xarray as xr
+
+    west, south, east, north = bbox
+    lat = np.arange(north, south - 0.01, -0.25)
+    lon = np.arange(west, east + 0.01, 0.25)
+    t2m = np.full((2, lat.size, lon.size), 270.0)
+    return xr.Dataset(
+        {"t2m": (("time", "latitude", "longitude"), t2m)},
+        coords={"time": [0, 1], "latitude": lat, "longitude": lon},
+    )
+
+
+class _DateKeyedSource:
+    """Stand-in for ERA5Source: its cache knows dates, not places.
+
+    The first fetch into a cache directory fills it; any later fetch into
+    the same directory gets that data back whatever bbox it asked for.
+    """
+
+    def __init__(self, inputs, storage):
+        self.cache = storage.forcing_cache
+        self.store = _DateKeyedSource.stores
+
+    def fetch(self, bbox, time_range, required_vars=None):
+        if self.cache not in self.store:
+            self.store[self.cache] = _grid(bbox)
+        return self.store[self.cache], None
+
+
+class TestSparseForcingPatches:
+    def _domain(self, tmp_path, bboxes):
+        cfg = TPS2Config(
+            domain=DomainConfig(
+                spatial_mode="points",
+                points=PointsConfig(coordinates=_make_points(("a", 77.0, 43.0))),
+            ),
+        )
+        cfg.storage.forcing_cache = tmp_path / "forcing_cache"
+        d = Domain(cfg)
+        d._sparse_era5_bboxes = bboxes
+        _DateKeyedSource.stores = {}
+        d._nwp_source = _DateKeyedSource(cfg.inputs, cfg.storage)
+        return d
+
+    def test_each_group_gets_its_own_patch(self, tmp_path):
+        """Regression: every group used to get the first group's ERA5 patch."""
+        bboxes = [(76.0, 42.0, 78.0, 44.0), (67.0, 38.0, 69.0, 40.0)]
+        d = self._domain(tmp_path, bboxes)
+        d._fetch_sparse_forcing(["2026-03-01", "2026-03-03"], None)
+
+        lats = d._ds_surface.latitude.values
+        lons = d._ds_surface.longitude.values
+        for west, south, east, north in bboxes:
+            assert lats.min() <= south and lats.max() >= north
+            assert lons.min() <= west and lons.max() >= east
+        assert len(_DateKeyedSource.stores) == 2
+
+    def test_single_group_uses_its_own_patch_cache(self, tmp_path):
+        """One group also gets a bbox-keyed cache, so moving the point refetches."""
+        d = self._domain(tmp_path, [(76.0, 42.0, 78.0, 44.0)])
+        d._fetch_sparse_forcing(["2026-03-01", "2026-03-03"], None)
+        (cache,) = _DateKeyedSource.stores
+        assert cache.parent == tmp_path / "forcing_cache"
+        assert cache.name.startswith("patch_")
+
+    def test_patch_missing_its_points_raises(self):
+        from topopyscale2.domain import _check_patch_covers
+
+        wrong = _grid((76.0, 42.0, 78.0, 44.0))
+        with pytest.raises(RuntimeError, match="does not cover"):
+            _check_patch_covers(wrong, (67.0, 38.0, 69.0, 40.0), 1)
+
+    def test_empty_patch_raises(self):
+        from topopyscale2.domain import _check_patch_covers
+
+        empty = _grid((76.0, 42.0, 78.0, 44.0)).isel(latitude=slice(0, 0))
+        with pytest.raises(RuntimeError, match="does not cover"):
+            _check_patch_covers(empty, (76.0, 42.0, 78.0, 44.0), 0)
+
+    def test_matching_patch_passes(self):
+        from topopyscale2.domain import _check_patch_covers
+
+        _check_patch_covers(_grid((76.0, 42.0, 78.0, 44.0)), (76.0, 42.0, 78.0, 44.0), 0)

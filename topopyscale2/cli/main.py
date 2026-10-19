@@ -7,6 +7,7 @@ import numpy as np
 import typer
 
 from topopyscale2.cli._app import app, console
+from topopyscale2.core.forcing_checks import check_forcing
 from topopyscale2.outputs.base import with_cf_metadata
 
 # Template config for new simulations
@@ -625,9 +626,11 @@ def run(
                 for var in chunk_results.variables:
                     chunk_results[var].encoding.pop("chunks", None)
                 if first_chunk:
+                    check_forcing(chunk_results, f"tps2 run output (chunk {ci + 1})")
                     with_cf_metadata(chunk_results).to_zarr(str(output_path), mode="w")
                     first_chunk = False
                 else:
+                    check_forcing(chunk_results, f"tps2 run output (chunk {ci + 1})")
                     chunk_results.to_zarr(str(output_path), mode="a", append_dim="time")
             elif cfg.output.format == "netcdf":
                 if first_chunk:
@@ -650,7 +653,9 @@ def run(
         ds_elapsed = time.time() - ds_time_start
 
         if cfg.output.format == "netcdf":
-            with_cf_metadata(xr.concat(all_results, dim="time")).to_netcdf(str(output_path))
+            merged = xr.concat(all_results, dim="time")
+            check_forcing(merged, "tps2 run output")
+            with_cf_metadata(merged).to_netcdf(str(output_path))
             del all_results
 
         console.print(f"\n  Downscaled {n_units} units × {_n_chunks} chunks in {ds_elapsed:.1f}s")
@@ -799,10 +804,12 @@ def run(
 
         if cfg.output.format == "zarr":
             output_path = output_dir / "forcing.zarr"
+            check_forcing(results, "tps2 run output")
             with_cf_metadata(results).to_zarr(str(output_path), mode="w")
             console.print(f"  Written: {output_path}")
         elif cfg.output.format == "netcdf":
             output_path = output_dir / "forcing.nc"
+            check_forcing(results, "tps2 run output")
             with_cf_metadata(results).to_netcdf(str(output_path))
             console.print(f"  Written: {output_path}")
         else:
@@ -1011,10 +1018,12 @@ def _run_downscale_pipeline(
         output_path = output_dir / "forcing.zarr"
         for var in results.variables:
             results[var].encoding.pop("chunks", None)
+        check_forcing(results, "tps2 run output")
         with_cf_metadata(results).to_zarr(str(output_path), mode="w")
         console.print(f"  Written: {output_path}")
     elif cfg.output.format == "netcdf":
         output_path = output_dir / "forcing.nc"
+        check_forcing(results, "tps2 run output")
         with_cf_metadata(results).to_netcdf(str(output_path))
         console.print(f"  Written: {output_path}")
     else:

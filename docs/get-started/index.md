@@ -177,6 +177,30 @@ The output has one `unit` per point, named after it:
 station measurements, since an area run compares a station with the terrain unit it falls in,
 whose mean elevation can differ from the station's.
 
+## Use your own DEM
+
+By default TPS2 downloads the Copernicus DEM (`dem_source: glo_30` or `glo_90`) one 1°×1° tile
+at a time into `dem_cache/tiles/`, then cuts out your domain. To skip the download, either:
+
+- **Point `domain.dem` at a GeoTIFF** you already have. It must cover the whole domain, or
+  every point plus a few kilometres around it for horizon and sky view. Heights must be
+  above sea level, not above the ellipsoid. With `spatial_mode: points` you can leave out
+  `bbox`: the ERA5 area then follows the points.
+
+    ```yaml
+    domain:
+      spatial_mode: points
+      dem: /path/to/dem.tif
+      points:
+        coordinates:
+          - {name: davos, lon: 9.8458, lat: 46.8130}
+    ```
+
+- **Or place the Copernicus tiles in `dem_cache/tiles/` yourself**, with their original file
+  names, e.g. `Copernicus_DSM_COG_30_N46_00_E009_00_DEM.tif`. TPS2 uses any tile it finds
+  there and downloads only the missing ones. If a download fails, the error lists the exact
+  URLs to fetch.
+
 ## Rebuild the demo page
 
 The page is built from inputs that ship with it (556&nbsp;KB), so it rebuilds offline in

@@ -218,6 +218,135 @@ def _reproject_chunked(src_array, src_transform, src_crs,
     return dst_array
 
 
+# Sources whose tiles are plain GeoTIFFs on public HTTPS. For these we fetch
+# the tiles ourselves, one at a time with socket timeouts, and merge them from
+# local disk without threads. stitch_dem reads them remotely through GDAL and
+# merges in a ThreadPoolExecutor, which hangs forever on some managed Windows
+# machines (public issue #1); it stays the path for every other case.
+_LOCAL_TILE_SOURCES = ("glo_30", "glo_90")
+TILE_TIMEOUT_S = 60.0
+TILE_RETRIES = 3
+
+
+class DEMDownloadError(RuntimeError):
+    """A DEM tile could not be downloaded."""
+
+
+def dem_tile_urls(bbox: list[float], source: str) -> list[str]:
+    """URLs of the DEM tiles overlapping *bbox* (from dem_stitcher's local index)."""
+    from dem_stitcher.datasets import get_overlapping_dem_tiles
+
+    return get_overlapping_dem_tiles(list(bbox), source).url.tolist()
+
+
+def _uses_local_tiles(bbox: list[float], source: str) -> bool:
+    from dem_stitcher.datasets import intersects_missing_glo_30_tiles
+    from dem_stitcher.dateline import get_dateline_crossing
+
+    if source not in _LOCAL_TILE_SOURCES or get_dateline_crossing(list(bbox)):
+        return False
+    # glo_30 has holes (Armenia/Azerbaijan) that stitch_dem patches with glo_90
+    return not (source == "glo_30" and intersects_missing_glo_30_tiles(list(bbox)))
+
+
+def fetch_dem_tiles(
+    urls: list[str],
+    tile_dir: Path,
+    timeout: float = TILE_TIMEOUT_S,
+    retries: int = TILE_RETRIES,
+) -> list[Path]:
+    """Download DEM tiles into *tile_dir*, skipping tiles already there.
+
+    Tiles are fetched sequentially with a socket timeout, so a stalled
+    connection fails instead of hanging. A tile placed in *tile_dir* by hand
+    (same file name as the URL) is used as is.
+    """
+    import shutil
+    import time
+    import urllib.request
+
+    tile_dir = Path(tile_dir)
+    tile_dir.mkdir(parents=True, exist_ok=True)
+    paths = [tile_dir / url.rsplit("/", 1)[-1] for url in urls]
+    missing = [(u, p) for u, p in zip(urls, paths) if not p.exists()]
+    if len(missing) < len(urls):
+        print(f"  Using {len(urls) - len(missing)} cached tile(s) in {tile_dir}")
+
+    for i, (url, path) in enumerate(missing, 1):
+        print(f"  Downloading tile {i}/{len(missing)}: {path.name}")
+        part = path.with_name(path.name + ".part")
+        for attempt in range(1, retries + 1):
+            try:
+                with urllib.request.urlopen(url, timeout=timeout) as resp, open(part, "wb") as f:
+                    shutil.copyfileobj(resp, f, length=1 << 20)
+                part.replace(path)
+                break
+            except OSError as exc:  # URLError, socket timeouts, HTTP errors
+                part.unlink(missing_ok=True)
+                if attempt == retries:
+                    todo = "\n".join(f"    {u}" for u, p in zip(urls, paths) if not p.exists())
+                    raise DEMDownloadError(
+                        f"Could not download DEM tile {url} after {retries} attempts "
+                        f"({exc}).\n"
+                        f"  Download these tiles another way (browser, curl) into "
+                        f"{tile_dir} and run again:\n{todo}\n"
+                        "  Or point domain.dem at a DEM GeoTIFF you already have."
+                    ) from exc
+                time.sleep(2 * attempt)
+    return paths
+
+
+def stitch_local_tiles(
+    tile_paths: list[Path],
+    bbox: list[float],
+) -> tuple[np.ndarray, dict]:
+    """Merge local Copernicus tiles over *bbox*, without threads.
+
+    Sequential copy of dem_stitcher's merge for the case download_dem uses
+    (orthometric heights, pixel-is-point), so the output matches
+    ``stitch_dem(bbox, dst_ellipsoidal_height=False, dst_area_or_point="Point")``.
+    """
+    import warnings
+
+    from dem_stitcher.merge import merge_arrays_with_geometadata
+    from dem_stitcher.rio_window import format_window_profile, get_window_from_extent
+    from dem_stitcher.stitcher import shift_profile_for_pixel_loc
+    from shapely.geometry import box
+
+    extent = box(*bbox)
+    datasets = [rasterio.open(p) for p in tile_paths]
+    try:
+        arrays, profiles = [], []
+        for ds in datasets:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=RuntimeWarning)
+                overlap = box(*ds.bounds).intersection(extent)
+                if overlap.is_empty or overlap.geom_type != "Polygon":
+                    continue
+                window = get_window_from_extent(ds.profile, list(bbox), window_crs=CRS.from_epsg(4326))
+            arr = ds.read(window=window).astype(np.float32)
+            arrays.append(arr)
+            profiles.append(format_window_profile(ds.profile, arr, ds.window_transform(window)))
+        if not arrays:
+            raise DEMDownloadError(f"No DEM tile in {[str(p) for p in tile_paths]} overlaps {bbox}")
+
+        dem_arr, dem_profile = merge_arrays_with_geometadata(
+            arrays, profiles, resampling="nearest", method="first", nodata=np.nan, dtype=np.float32,
+        )
+        dem_profile["nodata"] = np.nan
+        src_area_or_point = datasets[0].tags().get("AREA_OR_POINT", "Area")
+        dem_profile = shift_profile_for_pixel_loc(dem_profile, src_area_or_point, "Point")
+
+        tile_meta = datasets[0].profile.copy()
+        for key in ("transform", "dtype", "height", "width", "nodata", "crs"):
+            tile_meta.pop(key)
+        dem_profile.update(**tile_meta)
+    finally:
+        for ds in datasets:
+            ds.close()
+    return dem_arr[0, ...], dem_profile
+
+
 def download_dem(
     bbox: list[float],
     output_path: str,
@@ -225,6 +354,7 @@ def download_dem(
     epsg: int | None = None,
     source: str = "glo_30",
     resolution: float | None = None,
+    tile_dir: str | Path | None = None,
 ) -> Path:
     """
     Download DEM for a bounding box and save as GeoTIFF.
@@ -244,6 +374,10 @@ def download_dem(
         DEM source: 'glo_30', 'glo_90', 'srtm_v3', 'nasadem', '3dep' (default: glo_30)
     resolution : float, optional
         Target resolution in CRS units. If None, uses native resolution.
+    tile_dir : str or Path, optional
+        Where glo_30/glo_90 tiles are downloaded and kept (default: a
+        ``tiles/`` directory next to *output_path*). Tiles already there are
+        not downloaded again.
 
     Returns
     -------
@@ -275,12 +409,17 @@ def download_dem(
               "Consider using glo_90 (--source glo_90) or a smaller bbox.")
 
     # Download and stitch DEM tiles
-    dem_array, dem_profile = stitch_dem(
-        bbox,
-        dem_name=source,
-        dst_ellipsoidal_height=False,  # Keep orthometric heights
-        dst_area_or_point="Point",
-    )
+    if _uses_local_tiles(bbox, source):
+        tile_dir = Path(tile_dir) if tile_dir is not None else output_path.parent / "tiles"
+        tile_paths = fetch_dem_tiles(dem_tile_urls(bbox, source), tile_dir)
+        dem_array, dem_profile = stitch_local_tiles(tile_paths, bbox)
+    else:
+        dem_array, dem_profile = stitch_dem(
+            bbox,
+            dem_name=source,
+            dst_ellipsoidal_height=False,  # Keep orthometric heights
+            dst_area_or_point="Point",
+        )
 
     print(f"  Downloaded shape: {dem_array.shape}")
     print(f"  Native CRS: {dem_profile['crs']}")
